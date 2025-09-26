@@ -1,0 +1,45 @@
+Kardly
+
+
+Target Audience
+
+	Primary: K-Pop fans aged 14–30 
+
+	Secondary: Resellers, small shop owners, trading communities
+
+
+Pain Points:
+
+	Hard to track growing collections
+
+	Difficult to verify card rarity/value
+
+	Trading is scattered across Twitter/Instagram/Discord
+
+
+Key Features
+	Core (Free)
+
+		Database Search: Browse photocards by group, member, album, era.
+
+		Collection Tracking: Mark cards as “owned” or “wishlist.”
+
+		Album-Style Views: Digital photo albums organized by group/era.
+
+		User Profiles: View others’ public collections.
+
+	Premium (Paid ~£3.99/month or £29.99/year)
+
+		Unlimited Photocards (free users limited to 100).
+
+		Unlimited Albums / Lists (free users limited to 2).
+
+
+		Trading Hub Access: Post and respond to trade requests.
+
+		Customization: Themes, backgrounds, stickers for album layouts.
+		
+		Upload new photocards ( have to be approved by admin )
+
+		Basic Social: Follow, like, and comment on profiles - leave 'ratings' for traders
+
