@@ -131,7 +131,18 @@ class HomePage extends StatelessWidget {
                 isPremium: true,
               ),
             ),
-
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickActionCard(
+                icon: Icons.add_photo_alternate,
+                title: 'Add Photocard',
+                subtitle: 'Upload new card',
+                color: AppTheme.darkPurple,
+                onTap: () {
+                  context.push('/add-photocard');
+                },
+              ),
+            ),
           ],
         ),
       ],

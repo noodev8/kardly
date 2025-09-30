@@ -10,6 +10,7 @@ import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import 'package:kardly/features/photocard/presentation/pages/photocard_detail_page.dart';
+import '../../features/photocard/presentation/pages/add_photocard_page.dart';
 import '../../shared/presentation/widgets/main_navigation.dart';
 
 class AppRouter {
@@ -75,6 +76,13 @@ class AppRouter {
           final photocardId = state.pathParameters['id'] ?? '0';
           return PhotocardDetailPage(photocardId: photocardId);
         },
+      ),
+
+      // Add Photocard Route
+      GoRoute(
+        path: '/add-photocard',
+        name: 'add-photocard',
+        builder: (context, state) => const AddPhotocardPage(),
       ),
     ],
   );

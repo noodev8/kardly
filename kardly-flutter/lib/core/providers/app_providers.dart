@@ -7,6 +7,7 @@ import '../../features/collection/presentation/providers/collection_provider.dar
 import '../../features/search/presentation/providers/search_provider.dart';
 import '../../features/trading/presentation/providers/trading_provider.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
+import '../../features/photocard/presentation/providers/add_photocard_provider.dart';
 
 class AppProviders {
   static List<SingleChildWidget> get providers => [
@@ -16,5 +17,6 @@ class AppProviders {
     ChangeNotifierProvider(create: (_) => SearchProvider()),
     ChangeNotifierProvider(create: (_) => TradingProvider()),
     ChangeNotifierProvider(create: (_) => ProfileProvider()),
+    ChangeNotifierProvider(create: (_) => AddPhotocardProvider()),
   ];
 }
