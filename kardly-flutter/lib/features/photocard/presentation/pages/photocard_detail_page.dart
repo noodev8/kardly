@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
 
 class PhotocardDetailPage extends StatefulWidget {
   final String photocardId;
-  
+
   const PhotocardDetailPage({
     super.key,
     required this.photocardId,
@@ -19,40 +20,59 @@ class PhotocardDetailPage extends StatefulWidget {
 class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   bool isOwned = false;
   bool isWishlisted = false;
-  
-  // Mock data - in real app this would come from API/database
-  late Map<String, dynamic> photocardData;
-  
+  bool _isLoading = true;
+  String? _error;
+
+  Map<String, dynamic>? photocardData;
+
   @override
   void initState() {
     super.initState();
     _loadPhotocardData();
   }
-  
-  void _loadPhotocardData() {
-    // Mock data based on photocard ID
-    final id = int.tryParse(widget.photocardId) ?? 0;
-    final groups = ['NewJeans', 'BLACKPINK', 'aespa', 'IVE', 'ITZY'];
-    final members = ['Minji', 'Jennie', 'Karina', 'Wonyoung', 'Yeji'];
-    final albums = ['Get Up', 'Born Pink', 'MY WORLD', 'I\'ve IVE', 'CHECKMATE'];
-    final rarities = ['Common', 'Rare', 'Super Rare', 'Ultra Rare', 'Legendary'];
-    
-    photocardData = {
-      'id': widget.photocardId,
-      'groupName': groups[id % groups.length],
-      'memberName': members[id % members.length],
-      'albumName': albums[id % albums.length],
-      'rarity': rarities[id % rarities.length],
-      'releaseDate': '2024-${(id % 12) + 1}-${(id % 28) + 1}',
-      'description': 'Official photocard from ${albums[id % albums.length]} album featuring ${members[id % members.length]}. This card showcases beautiful styling and high-quality printing.',
-      'cardNumber': '${id + 1}/55',
-      'condition': 'Mint',
-      'imageUrl': null, // Would be actual image URL in real app
-    };
-    
-    // Mock owned/wishlist status
-    isOwned = id % 4 == 0;
-    isWishlisted = id % 3 == 0;
+
+  Future<void> _loadPhotocardData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Fetch all photocards and find the one with matching ID
+      final response = await ApiService.getPhotocards(limit: 100);
+      final photocards = response['photocards'] as List<Map<String, dynamic>>;
+
+      final photocard = photocards.firstWhere(
+        (p) => p['id'] == widget.photocardId,
+        orElse: () => {},
+      );
+
+      if (photocard.isEmpty) {
+        setState(() {
+          _error = 'Photocard not found';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        photocardData = {
+          'id': photocard['id'],
+          'groupName': photocard['group_name'] ?? 'Unknown Group',
+          'memberName': photocard['member_stage_name'] ?? photocard['member_name'] ?? 'Unknown Member',
+          'albumName': photocard['album_title'] ?? 'Unknown Album',
+          'imageUrl': photocard['image_url'],
+          'createdAt': photocard['created_at'],
+          'description': 'Official photocard featuring ${photocard['member_stage_name'] ?? photocard['member_name'] ?? 'Unknown Member'}.',
+        };
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load photocard: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -67,7 +87,11 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          '${photocardData['groupName']} - ${photocardData['memberName']}',
+          _isLoading
+              ? 'Loading...'
+              : photocardData != null
+                  ? '${photocardData!['groupName']} - ${photocardData!['memberName']}'
+                  : 'Photocard',
           style: const TextStyle(
             color: AppTheme.charcoal,
             fontSize: 18,
@@ -75,29 +99,61 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.share,
-              color: AppTheme.charcoal,
+          if (!_isLoading && photocardData != null)
+            IconButton(
+              icon: const Icon(
+                Icons.share,
+                color: AppTheme.charcoal,
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Share functionality coming soon!')),
+                );
+              },
             ),
-            onPressed: () {
-              // TODO: Implement share functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Share functionality coming soon!')),
-              );
-            },
-          ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Photocard Image
-            _buildPhotocardImage(),
-            
-            const SizedBox(height: 24),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: AppTheme.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppTheme.charcoal,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        PrimaryButton(
+                          text: 'Go Back',
+                          onPressed: () => context.pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Photocard Image
+                      _buildPhotocardImage(),
+
+                      const SizedBox(height: 24),
             
             // Action Buttons
             _buildActionButtons(),
@@ -123,6 +179,8 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   }
   
   Widget _buildPhotocardImage() {
+    if (photocardData == null) return const SizedBox.shrink();
+
     return Center(
       child: CustomCard(
         padding: EdgeInsets.zero,
@@ -131,80 +189,46 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
           height: 350,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppTheme.lightPurple.withOpacity(0.3),
-                AppTheme.primaryPurple.withOpacity(0.1),
-              ],
-            ),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                // Placeholder image
-                Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  color: AppTheme.lightGray,
-                  child: const Icon(
-                    Icons.photo,
-                    size: 80,
-                    color: AppTheme.darkGray,
-                  ),
-                ),
-                
-                // Rarity Badge
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getRarityColor(photocardData['rarity']),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      photocardData['rarity'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Card Number
-                Positioned(
-                  bottom: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      photocardData['cardNumber'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
+            child: photocardData!['imageUrl'] != null
+                ? Image.network(
+                    photocardData!['imageUrl'],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: AppTheme.lightGray,
+                        child: const Icon(
+                          Icons.broken_image,
+                          size: 80,
+                          color: AppTheme.darkGray,
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: AppTheme.lightGray,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : Container(
+                    color: AppTheme.lightGray,
+                    child: const Icon(
+                      Icons.photo,
+                      size: 80,
+                      color: AppTheme.darkGray,
                     ),
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -260,6 +284,8 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   }
   
   Widget _buildCardInformation() {
+    if (photocardData == null) return const SizedBox.shrink();
+
     return CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,18 +299,26 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Group', photocardData['groupName']),
-          _buildInfoRow('Member', photocardData['memberName']),
-          _buildInfoRow('Album', photocardData['albumName']),
-          _buildInfoRow('Rarity', photocardData['rarity']),
-          _buildInfoRow('Card Number', photocardData['cardNumber']),
-          _buildInfoRow('Release Date', photocardData['releaseDate']),
-          _buildInfoRow('Condition', photocardData['condition']),
+          _buildInfoRow('Group', photocardData!['groupName'] ?? 'Unknown'),
+          _buildInfoRow('Member', photocardData!['memberName'] ?? 'Unknown'),
+          _buildInfoRow('Album', photocardData!['albumName'] ?? 'Unknown'),
+          if (photocardData!['createdAt'] != null)
+            _buildInfoRow('Added', _formatDate(photocardData!['createdAt'])),
         ],
       ),
     );
   }
-  
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'Unknown';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -318,6 +352,8 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   }
 
   Widget _buildDescription() {
+    if (photocardData == null) return const SizedBox.shrink();
+
     return CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,7 +368,7 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            photocardData['description'],
+            photocardData!['description'] ?? 'No description available.',
             style: const TextStyle(
               fontSize: 14,
               color: AppTheme.darkGray,
@@ -345,59 +381,7 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   }
 
   Widget _buildRelatedCards() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'More from this Album',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.charcoal,
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return Container(
-                width: 130,
-                margin: const EdgeInsets.only(right: 12),
-                child: PhotocardWidget(
-                  groupName: photocardData['groupName'],
-                  memberName: 'Member ${index + 1}',
-                  albumName: photocardData['albumName'],
-                  rarity: ['Common', 'Rare', 'Super Rare'][index % 3],
-                  useAspectRatio: false,
-                  onTap: () {
-                    context.push('/photocard/${index + 100}');
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _getRarityColor(String rarity) {
-    switch (rarity.toLowerCase()) {
-      case 'common':
-        return AppTheme.darkGray;
-      case 'rare':
-        return AppTheme.info;
-      case 'super rare':
-        return AppTheme.primaryPurple;
-      case 'ultra rare':
-        return AppTheme.accentPink;
-      case 'legendary':
-        return AppTheme.warning;
-      default:
-        return AppTheme.darkGray;
-    }
+    // Hide related cards section for now since we don't have album-based filtering yet
+    return const SizedBox.shrink();
   }
 }

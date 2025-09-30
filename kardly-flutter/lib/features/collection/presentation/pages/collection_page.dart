@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
+import '../providers/collection_provider.dart';
 
 class CollectionPage extends StatefulWidget {
   const CollectionPage({super.key});
@@ -21,6 +23,10 @@ class _CollectionPageState extends State<CollectionPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Load photocards when page initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CollectionProvider>().loadCollection();
+    });
   }
 
   @override
@@ -124,42 +130,46 @@ class _CollectionPageState extends State<CollectionPage>
   }
 
   Widget _buildStatsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _StatCard(
-              title: 'Owned',
-              value: '47',
-              subtitle: 'photocards',
-              color: AppTheme.success,
-              icon: Icons.check_circle,
-            ),
+    return Consumer<CollectionProvider>(
+      builder: (context, provider, child) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Owned',
+                  value: '${provider.totalOwnedCount}',
+                  subtitle: 'photocards',
+                  color: AppTheme.success,
+                  icon: Icons.check_circle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Wishlist',
+                  value: '${provider.totalWishlistCount}',
+                  subtitle: 'wanted',
+                  color: AppTheme.accentPink,
+                  icon: Icons.favorite,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Value',
+                  value: '£${provider.estimatedValue.toStringAsFixed(0)}',
+                  subtitle: 'estimated',
+                  color: AppTheme.warning,
+                  icon: Icons.trending_up,
+                  isPremium: true,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _StatCard(
-              title: 'Wishlist',
-              value: '23',
-              subtitle: 'wanted',
-              color: AppTheme.accentPink,
-              icon: Icons.favorite,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _StatCard(
-              title: 'Value',
-              value: '£340',
-              subtitle: 'estimated',
-              color: AppTheme.warning,
-              icon: Icons.trending_up,
-              isPremium: true,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -190,230 +200,365 @@ class _CollectionPageState extends State<CollectionPage>
   }
 
   Widget _buildOwnedTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Filter Bar
-          Row(
-            children: [
-              const Text(
-                '47 photocards',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.charcoal,
+    return Consumer<CollectionProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: ${provider.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppTheme.charcoal),
                 ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  text: 'Retry',
+                  onPressed: () => provider.loadCollection(),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final photocards = provider.ownedCards;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Filter Bar
+              Row(
+                children: [
+                  Text(
+                    '${photocards.length} photocards',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.charcoal,
+                    ),
+                  ),
+                  const Spacer(),
+                  CustomFilterChip(
+                    label: 'All Groups',
+                    isSelected: false,
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 8),
+                  CustomFilterChip(
+                    label: 'Sort',
+                    isSelected: false,
+                    icon: Icons.sort,
+                    onTap: () {},
+                  ),
+                ],
               ),
-              const Spacer(),
-              CustomFilterChip(
-                label: 'All Groups',
-                isSelected: false,
-                onTap: () {},
-              ),
-              const SizedBox(width: 8),
-              CustomFilterChip(
-                label: 'Sort',
-                isSelected: false,
-                icon: Icons.sort,
-                onTap: () {},
+
+              const SizedBox(height: 16),
+
+              // Collection Grid
+              Expanded(
+                child: photocards.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.photo_library_outlined,
+                              size: 64,
+                              color: AppTheme.darkGray,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No photocards yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.charcoal,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Start building your collection!',
+                              style: TextStyle(color: AppTheme.darkGray),
+                            ),
+                            const SizedBox(height: 24),
+                            PrimaryButton(
+                              text: 'Add Photocard',
+                              icon: Icons.add,
+                              onPressed: () => context.push('/add-photocard'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: photocards.length,
+                        itemBuilder: (context, index) {
+                          final photocard = photocards[index];
+                          return PhotocardWidget(
+                            imageUrl: photocard.imageUrl,
+                            groupName: photocard.groupName,
+                            memberName: photocard.memberName,
+                            albumName: photocard.albumName,
+                            isOwned: photocard.isOwned,
+                            isWishlisted: photocard.isWishlisted,
+                            onTap: () {
+                              context.push('/photocard/${photocard.id}');
+                            },
+                            onOwnedToggle: () {
+                              provider.toggleOwned(photocard.id);
+                            },
+                            onWishlistToggle: () {
+                              provider.toggleWishlist(photocard.id);
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Collection Grid
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.75, // Fixed aspect ratio to prevent overflow
-              ),
-              itemCount: 15,
-              itemBuilder: (context, index) {
-                return PhotocardWidget(
-                  groupName: _mockGroups[index % _mockGroups.length],
-                  memberName: _mockMembers[index % _mockMembers.length],
-                  albumName: _mockAlbums[index % _mockAlbums.length],
-                  rarity: _mockRarities[index % _mockRarities.length],
-                  isOwned: true,
-                  isWishlisted: index % 3 == 0,
-                  onTap: () {
-                    context.push('/photocard/$index');
-                  },
-                  onOwnedToggle: () {
-                    // TODO: Toggle owned status
-                  },
-                  onWishlistToggle: () {
-                    // TODO: Toggle wishlist status
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildWishlistTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Filter Bar
-          Row(
+    return Consumer<CollectionProvider>(
+      builder: (context, provider, child) {
+        final wishlistCards = provider.wishlistCards;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '23 wanted cards',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.charcoal,
-                ),
+              // Filter Bar
+              Row(
+                children: [
+                  Text(
+                    '${wishlistCards.length} wanted cards',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.charcoal,
+                    ),
+                  ),
+                  const Spacer(),
+                  CustomFilterChip(
+                    label: 'Priority',
+                    isSelected: false,
+                    icon: Icons.star,
+                    onTap: () {},
+                  ),
+                ],
               ),
-              const Spacer(),
-              CustomFilterChip(
-                label: 'Priority',
-                isSelected: false,
-                icon: Icons.star,
-                onTap: () {},
+
+              const SizedBox(height: 16),
+
+              // Wishlist Grid
+              Expanded(
+                child: wishlistCards.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.favorite_border,
+                              size: 64,
+                              color: AppTheme.darkGray,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No wishlist items yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.charcoal,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Add photocards you want to collect!',
+                              style: TextStyle(color: AppTheme.darkGray),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: wishlistCards.length,
+                        itemBuilder: (context, index) {
+                          final photocard = wishlistCards[index];
+                          return PhotocardWidget(
+                            imageUrl: photocard.imageUrl,
+                            groupName: photocard.groupName,
+                            memberName: photocard.memberName,
+                            albumName: photocard.albumName,
+                            isOwned: photocard.isOwned,
+                            isWishlisted: photocard.isWishlisted,
+                            onTap: () {
+                              context.push('/photocard/${photocard.id}');
+                            },
+                            onOwnedToggle: () {
+                              provider.toggleOwned(photocard.id);
+                            },
+                            onWishlistToggle: () {
+                              provider.toggleWishlist(photocard.id);
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Wishlist Grid
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.75, // Fixed aspect ratio to prevent overflow
-              ),
-              itemCount: 10,
-              itemBuilder: (context, index) {
-                return PhotocardWidget(
-                  groupName: _mockGroups[index % _mockGroups.length],
-                  memberName: _mockMembers[index % _mockMembers.length],
-                  albumName: _mockAlbums[index % _mockAlbums.length],
-                  rarity: _mockRarities[index % _mockRarities.length],
-                  isOwned: false,
-                  isWishlisted: true,
-                  onTap: () {
-                    context.push('/photocard/$index');
-                  },
-                  onOwnedToggle: () {
-                    // TODO: Toggle owned status
-                  },
-                  onWishlistToggle: () {
-                    // TODO: Toggle wishlist status
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildAlbumsTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
+    return Consumer<CollectionProvider>(
+      builder: (context, provider, child) {
+        final albums = provider.albums;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'My Albums',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.charcoal,
+              // Header
+              Row(
+                children: [
+                  Text(
+                    'My Albums (${albums.length})',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.charcoal,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (albums.isNotEmpty)
+                    PremiumBadge(text: '${albums.length} Albums', isSmall: true),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Albums List
+              Expanded(
+                child: albums.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.album_outlined,
+                              size: 64,
+                              color: AppTheme.darkGray,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No albums yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.charcoal,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Albums will appear as you add photocards',
+                              style: TextStyle(color: AppTheme.darkGray),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: albums.length,
+                        itemBuilder: (context, index) {
+                          final album = albums[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: _AlbumCard(
+                              title: album.title,
+                              subtitle: '${album.cardCount} photocards',
+                              progress: album.completionPercentage,
+                              coverImages: const [],
+                              onTap: () {
+                                // TODO: Navigate to album detail
+                              },
+                            ),
+                          );
+                        },
+                      ),
+              ),
+
+              // Add Album Button (Premium)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.lightPurple.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryPurple.withOpacity(0.3),
+                    style: BorderStyle.solid,
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 32,
+                      color: AppTheme.primaryPurple,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Create New Album',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryPurple,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Upgrade to Premium for unlimited albums',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.darkGray,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const PremiumBadge(),
+                  ],
                 ),
               ),
-              const Spacer(),
-              const PremiumBadge(text: '2/2 Albums', isSmall: true),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Albums List
-          Expanded(
-            child: ListView.builder(
-              itemCount: 2,
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: _AlbumCard(
-                    title: index == 0 ? 'NewJeans Collection' : 'BLACKPINK Favorites',
-                    subtitle: index == 0 ? '25 photocards' : '18 photocards',
-                    progress: index == 0 ? 0.7 : 0.4,
-                    coverImages: _mockGroups.take(4).toList(),
-                    onTap: () {
-                      // TODO: Navigate to album detail
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          
-          // Add Album Button (Premium)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.lightPurple.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppTheme.primaryPurple.withOpacity(0.3),
-                style: BorderStyle.solid,
-                width: 2,
-              ),
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.add_photo_alternate_outlined,
-                  size: 32,
-                  color: AppTheme.primaryPurple,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Create New Album',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryPurple,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Upgrade to Premium for unlimited albums',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.darkGray,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const PremiumBadge(),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -422,23 +567,6 @@ class _CollectionPageState extends State<CollectionPage>
     _tabController.dispose();
     super.dispose();
   }
-
-  // Mock data
-  static const List<String> _mockGroups = [
-    'NewJeans', 'BLACKPINK', 'aespa', 'IVE', 'ITZY'
-  ];
-  
-  static const List<String> _mockMembers = [
-    'Minji', 'Hanni', 'Danielle', 'Haerin', 'Hyein'
-  ];
-  
-  static const List<String> _mockAlbums = [
-    'Get Up', 'NewJeans', 'OMG', 'Ditto', 'Hurt'
-  ];
-  
-  static const List<String> _mockRarities = [
-    'Common', 'Rare', 'Super Rare', 'Ultra Rare', 'Legendary'
-  ];
 }
 
 class _StatCard extends StatelessWidget {
