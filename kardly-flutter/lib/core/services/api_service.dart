@@ -14,7 +14,81 @@ class ApiService {
   // For iOS simulator: 'http://localhost:3000'
   // For production: 'https://your-production-url.com'
   static const String baseUrl = 'http://10.0.2.2:3000';
-  
+
+  /// Get all photocards with optional filters
+  ///
+  /// Parameters:
+  /// - groupId: Optional UUID to filter by group
+  /// - memberId: Optional UUID to filter by member
+  /// - albumId: Optional UUID to filter by album
+  /// - search: Optional search term
+  /// - limit: Number of results to return (default: 50)
+  /// - offset: Pagination offset (default: 0)
+  ///
+  /// Returns a Map with photocards array and metadata
+  static Future<Map<String, dynamic>> getPhotocards({
+    String? groupId,
+    String? memberId,
+    String? albumId,
+    String? search,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/photocards');
+
+      // Build request body
+      final Map<String, dynamic> body = {
+        'limit': limit,
+        'offset': offset,
+      };
+
+      if (groupId != null && groupId.isNotEmpty) {
+        body['group_id'] = groupId;
+      }
+      if (memberId != null && memberId.isNotEmpty) {
+        body['member_id'] = memberId;
+      }
+      if (albumId != null && albumId.isNotEmpty) {
+        body['album_id'] = albumId;
+      }
+      if (search != null && search.isNotEmpty) {
+        body['search'] = search;
+      }
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'photocards': List<Map<String, dynamic>>.from(data['photocards'] ?? []),
+          'count': data['count'] ?? 0,
+          'total': data['total'] ?? 0,
+          'limit': data['limit'] ?? limit,
+          'offset': data['offset'] ?? offset,
+        };
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to fetch photocards',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
   /// Add a new photocard to the database
   /// 
   /// Parameters:

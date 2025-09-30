@@ -2,11 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> _photocards = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPhotocards();
+  }
+
+  Future<void> _loadPhotocards() async {
+    try {
+      final response = await ApiService.getPhotocards(limit: 10);
+      setState(() {
+        _photocards = List<Map<String, dynamic>>.from(response['photocards']);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading photocards: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,16 +51,16 @@ class HomePage extends StatelessWidget {
               // Header
               _buildHeader(context),
               const SizedBox(height: 24),
-              
+
 
               // Quick Actions
               _buildQuickActions(context),
               const SizedBox(height: 24),
-              
+
               // Trending Photocards
               _buildTrendingSection(),
               const SizedBox(height: 24),
-              
+
               // Recent Activity
               _buildRecentActivity(),
             ],
@@ -156,7 +186,7 @@ class HomePage extends StatelessWidget {
         Row(
           children: [
             const Text(
-              'Trending Photocards',
+              'Recent Photocards',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -166,36 +196,74 @@ class HomePage extends StatelessWidget {
             const Spacer(),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to trending page
+                context.go('/collection');
               },
               child: const Text('See All'),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 190, // Increased height to accommodate new layout
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return Container(
-                width: 130, // Reduced width to fit better
-                margin: const EdgeInsets.only(right: 12),
-                child: PhotocardWidget(
-                  groupName: _mockGroups[index % _mockGroups.length],
-                  memberName: _mockMembers[index % _mockMembers.length],
-                  albumName: _mockAlbums[index % _mockAlbums.length],
-                  rarity: _mockRarities[index % _mockRarities.length],
-                  useAspectRatio: false, // Don't use aspect ratio in horizontal list
-                  onTap: () {
-                    context.push('/photocard/$index');
-                  },
+        _isLoading
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(),
                 ),
-              );
-            },
-          ),
-        ),
+              )
+            : _photocards.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.photo_library_outlined,
+                            size: 48,
+                            color: AppTheme.darkGray.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No photocards yet',
+                            style: TextStyle(
+                              color: AppTheme.darkGray.withOpacity(0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          TextButton(
+                            onPressed: () {
+                              context.push('/add-photocard');
+                            },
+                            child: const Text('Add your first photocard'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SizedBox(
+                    height: 190,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _photocards.length,
+                      itemBuilder: (context, index) {
+                        final photocard = _photocards[index];
+                        return Container(
+                          width: 130,
+                          margin: const EdgeInsets.only(right: 12),
+                          child: PhotocardWidget(
+                            imageUrl: photocard['image_url'],
+                            groupName: photocard['group_name'],
+                            memberName: photocard['member_stage_name'] ?? photocard['member_name'],
+                            albumName: photocard['album_title'],
+                            useAspectRatio: false,
+                            onTap: () {
+                              context.push('/photocard/${photocard['id']}');
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
       ],
     );
   }
@@ -265,23 +333,6 @@ class HomePage extends StatelessWidget {
       ],
     );
   }
-
-  // Mock data
-  static const List<String> _mockGroups = [
-    'NewJeans', 'BLACKPINK', 'aespa', 'IVE', 'ITZY'
-  ];
-  
-  static const List<String> _mockMembers = [
-    'Minji', 'Hanni', 'Danielle', 'Haerin', 'Hyein'
-  ];
-  
-  static const List<String> _mockAlbums = [
-    'Get Up', 'NewJeans', 'OMG', 'Ditto', 'Hurt'
-  ];
-  
-  static const List<String> _mockRarities = [
-    'Common', 'Rare', 'Super Rare', 'Ultra Rare', 'Legendary'
-  ];
 }
 
 class _QuickActionCard extends StatelessWidget {

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/api_service.dart';
 
 class CollectionProvider extends ChangeNotifier {
   List<Photocard> _ownedCards = [];
   List<Photocard> _wishlistCards = [];
   List<Album> _albums = [];
   bool _isLoading = false;
+  String? _error;
 
   List<Photocard> get ownedCards => _ownedCards;
   List<Photocard> get wishlistCards => _wishlistCards;
   List<Album> get albums => _albums;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   int get totalOwnedCount => _ownedCards.length;
   int get totalWishlistCount => _wishlistCards.length;
@@ -17,16 +20,23 @@ class CollectionProvider extends ChangeNotifier {
 
   Future<void> loadCollection() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      // TODO: Load from API
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Mock data
-      _ownedCards = _generateMockCards(47, true);
-      _wishlistCards = _generateMockCards(23, false);
-      _albums = _generateMockAlbums();
+      // Load photocards from API
+      final response = await ApiService.getPhotocards(limit: 100);
+      final photocardsData = response['photocards'] as List<Map<String, dynamic>>;
+
+      // Convert to Photocard objects
+      _ownedCards = photocardsData.map((data) => Photocard.fromJson(data)).toList();
+
+      // For now, wishlist is empty (we'll implement this later)
+      _wishlistCards = [];
+      _albums = [];
+    } catch (e) {
+      _error = e.toString();
+      print('Error loading collection: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -120,6 +130,20 @@ class Photocard {
     required this.isOwned,
     required this.isWishlisted,
   });
+
+  factory Photocard.fromJson(Map<String, dynamic> json) {
+    return Photocard(
+      id: json['id'] ?? '',
+      groupName: json['group_name'] ?? 'Unknown Group',
+      memberName: json['member_stage_name'] ?? json['member_name'] ?? 'Unknown Member',
+      albumName: json['album_title'] ?? 'Unknown Album',
+      rarity: 'Common', // We don't have rarity in DB yet
+      estimatedValue: 0.0, // We don't have value in DB yet
+      imageUrl: json['image_url'],
+      isOwned: true, // All fetched cards are owned for now
+      isWishlisted: false,
+    );
+  }
 }
 
 class Album {
