@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../providers/add_photocard_provider.dart';
@@ -25,20 +26,113 @@ class AddPhotocardPage extends StatefulWidget {
 
 class _AddPhotocardPageState extends State<AddPhotocardPage> {
   final _formKey = GlobalKey<FormState>();
-  final _groupIdController = TextEditingController();
-  final _memberIdController = TextEditingController();
-  final _albumIdController = TextEditingController();
+  final _groupSearchController = TextEditingController();
+  final _memberSearchController = TextEditingController();
+  final _albumSearchController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  
+
   File? _selectedImage;
   String? _imagePath;
 
+  // Selected entities
+  Map<String, dynamic>? _selectedGroup;
+  Map<String, dynamic>? _selectedMember;
+  Map<String, dynamic>? _selectedAlbum;
+
+  // Lists for dropdowns
+  List<Map<String, dynamic>> _groups = [];
+  List<Map<String, dynamic>> _members = [];
+  List<Map<String, dynamic>> _albums = [];
+
+  bool _isLoadingGroups = false;
+  bool _isLoadingMembers = false;
+  bool _isLoadingAlbums = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
   @override
   void dispose() {
-    _groupIdController.dispose();
-    _memberIdController.dispose();
-    _albumIdController.dispose();
+    _groupSearchController.dispose();
+    _memberSearchController.dispose();
+    _albumSearchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadGroups({String? search}) async {
+    setState(() => _isLoadingGroups = true);
+    try {
+      final groups = await ApiService.getGroups(search: search);
+      setState(() {
+        _groups = groups;
+        _isLoadingGroups = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingGroups = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load groups: ${e.toString()}'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadMembers({String? search}) async {
+    if (_selectedGroup == null) return;
+
+    setState(() => _isLoadingMembers = true);
+    try {
+      final members = await ApiService.getMembers(
+        groupId: _selectedGroup!['id'],
+        search: search,
+      );
+      setState(() {
+        _members = members;
+        _isLoadingMembers = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingMembers = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load members: ${e.toString()}'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadAlbums({String? search}) async {
+    if (_selectedGroup == null) return;
+
+    setState(() => _isLoadingAlbums = true);
+    try {
+      final albums = await ApiService.getAlbums(
+        groupId: _selectedGroup!['id'],
+        search: search,
+      );
+      setState(() {
+        _albums = albums;
+        _isLoadingAlbums = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingAlbums = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load albums: ${e.toString()}'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -116,18 +210,12 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
 
     if (_formKey.currentState!.validate()) {
       final provider = context.read<AddPhotocardProvider>();
-      
+
       final success = await provider.addPhotocard(
         imagePath: _imagePath!,
-        groupId: _groupIdController.text.trim().isEmpty 
-            ? null 
-            : _groupIdController.text.trim(),
-        memberId: _memberIdController.text.trim().isEmpty 
-            ? null 
-            : _memberIdController.text.trim(),
-        albumId: _albumIdController.text.trim().isEmpty 
-            ? null 
-            : _albumIdController.text.trim(),
+        groupId: _selectedGroup?['id'],
+        memberId: _selectedMember?['id'],
+        albumId: _selectedAlbum?['id'],
       );
 
       if (success && mounted) {
@@ -138,7 +226,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
             backgroundColor: AppTheme.success,
           ),
         );
-        
+
         // Navigate back after a short delay
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
@@ -147,6 +235,275 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
         });
       }
     }
+  }
+
+  void _showAddGroupDialog() {
+    final nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Group'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Group Name',
+            hintText: 'e.g., BTS, BLACKPINK',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) return;
+
+              Navigator.pop(context);
+
+              try {
+                final result = await ApiService.createGroup(
+                  name: nameController.text.trim(),
+                );
+
+                // Reload groups first
+                await _loadGroups();
+
+                // Then find and select the created/existing group from the loaded list
+                final groupId = result['group_id'];
+                final selectedGroup = _groups.firstWhere(
+                  (g) => g['id'] == groupId,
+                  orElse: () => {'id': groupId, 'name': result['name']},
+                );
+
+                setState(() {
+                  _selectedGroup = selectedGroup;
+                });
+
+                // Load members and albums for the selected group
+                await _loadMembers();
+                await _loadAlbums();
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['already_exists'] == true
+                          ? 'Group already exists'
+                          : 'Group created successfully'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create group: ${e.toString()}'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddMemberDialog() {
+    if (_selectedGroup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a group first'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+
+    final nameController = TextEditingController();
+    final stageNameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Member'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Real Name',
+                hintText: 'e.g., Kim Taehyung',
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: stageNameController,
+              decoration: const InputDecoration(
+                labelText: 'Stage Name (Optional)',
+                hintText: 'e.g., V',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) return;
+
+              Navigator.pop(context);
+
+              try {
+                final result = await ApiService.createMember(
+                  groupId: _selectedGroup!['id'],
+                  name: nameController.text.trim(),
+                  stageName: stageNameController.text.trim().isEmpty
+                      ? null
+                      : stageNameController.text.trim(),
+                );
+
+                // Reload members first
+                await _loadMembers();
+
+                // Then find and select the created/existing member from the loaded list
+                final memberId = result['member_id'];
+                final selectedMember = _members.firstWhere(
+                  (m) => m['id'] == memberId,
+                  orElse: () => {
+                    'id': memberId,
+                    'name': result['name'],
+                    'stage_name': result['stage_name'],
+                  },
+                );
+
+                setState(() {
+                  _selectedMember = selectedMember;
+                });
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['already_exists'] == true
+                          ? 'Member already exists'
+                          : 'Member created successfully'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create member: ${e.toString()}'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddAlbumDialog() {
+    if (_selectedGroup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a group first'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+
+    final titleController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Album'),
+        content: TextField(
+          controller: titleController,
+          decoration: const InputDecoration(
+            labelText: 'Album Title',
+            hintText: 'e.g., Love Yourself: Tear',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (titleController.text.trim().isEmpty) return;
+
+              Navigator.pop(context);
+
+              try {
+                final result = await ApiService.createAlbum(
+                  groupId: _selectedGroup!['id'],
+                  title: titleController.text.trim(),
+                );
+
+                // Reload albums first
+                await _loadAlbums();
+
+                // Then find and select the created/existing album from the loaded list
+                final albumId = result['album_id'];
+                final selectedAlbum = _albums.firstWhere(
+                  (a) => a['id'] == albumId,
+                  orElse: () => {
+                    'id': albumId,
+                    'title': result['title'],
+                  },
+                );
+
+                setState(() {
+                  _selectedAlbum = selectedAlbum;
+                });
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['already_exists'] == true
+                          ? 'Album already exists'
+                          : 'Album created successfully'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create album: ${e.toString()}'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -314,90 +671,158 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
               const Icon(Icons.info_outline, color: AppTheme.primaryPurple),
               const SizedBox(width: 8),
               Text(
-                'Metadata (Optional)',
+                'Photocard Details',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Provide additional information about the photocard',
+            'Select or add group, member, and album information',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppTheme.darkGray,
             ),
           ),
           const SizedBox(height: 16),
-          
-          // Group ID
-          TextFormField(
-            controller: _groupIdController,
-            decoration: const InputDecoration(
-              labelText: 'Group ID',
-              hintText: 'Enter K-pop group UUID',
-              prefixIcon: Icon(Icons.group),
-            ),
-            validator: (value) {
-              if (value != null && value.isNotEmpty) {
-                // Basic UUID format validation
-                final uuidRegex = RegExp(
-                  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-                  caseSensitive: false,
-                );
-                if (!uuidRegex.hasMatch(value)) {
-                  return 'Please enter a valid UUID';
-                }
-              }
-              return null;
-            },
+
+          // Group Selector
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<Map<String, dynamic>>(
+                  value: _selectedGroup,
+                  decoration: const InputDecoration(
+                    labelText: 'K-pop Group',
+                    prefixIcon: Icon(Icons.group),
+                    hintText: 'Select a group',
+                  ),
+                  items: _groups.map((group) {
+                    return DropdownMenuItem(
+                      value: group,
+                      child: Text(group['name'] ?? ''),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedGroup = value;
+                      _selectedMember = null;
+                      _selectedAlbum = null;
+                      _members = [];
+                      _albums = [];
+                    });
+                    if (value != null) {
+                      _loadMembers();
+                      _loadAlbums();
+                    }
+                  },
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle, color: AppTheme.primaryPurple),
+                onPressed: _showAddGroupDialog,
+                tooltip: 'Add new group',
+              ),
+            ],
           ),
-          
+
+          if (_isLoadingGroups)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+
           const SizedBox(height: 16),
-          
-          // Member ID
-          TextFormField(
-            controller: _memberIdController,
-            decoration: const InputDecoration(
-              labelText: 'Member ID',
-              hintText: 'Enter member UUID',
-              prefixIcon: Icon(Icons.person),
-            ),
-            validator: (value) {
-              if (value != null && value.isNotEmpty) {
-                final uuidRegex = RegExp(
-                  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-                  caseSensitive: false,
-                );
-                if (!uuidRegex.hasMatch(value)) {
-                  return 'Please enter a valid UUID';
-                }
-              }
-              return null;
-            },
+
+          // Member Selector
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<Map<String, dynamic>>(
+                  value: _selectedMember,
+                  decoration: InputDecoration(
+                    labelText: 'Member',
+                    prefixIcon: const Icon(Icons.person),
+                    hintText: _selectedGroup == null
+                        ? 'Select a group first'
+                        : 'Select a member',
+                  ),
+                  items: _members.map((member) {
+                    final displayName = member['stage_name'] != null && member['stage_name'].toString().isNotEmpty
+                        ? '${member['stage_name']} (${member['name']})'
+                        : member['name'];
+                    return DropdownMenuItem(
+                      value: member,
+                      child: Text(displayName ?? ''),
+                    );
+                  }).toList(),
+                  onChanged: _selectedGroup == null ? null : (value) {
+                    setState(() => _selectedMember = value);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.add_circle,
+                  color: _selectedGroup == null
+                      ? AppTheme.darkGray
+                      : AppTheme.primaryPurple,
+                ),
+                onPressed: _selectedGroup == null ? null : _showAddMemberDialog,
+                tooltip: 'Add new member',
+              ),
+            ],
           ),
-          
+
+          if (_isLoadingMembers)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+
           const SizedBox(height: 16),
-          
-          // Album ID
-          TextFormField(
-            controller: _albumIdController,
-            decoration: const InputDecoration(
-              labelText: 'Album ID',
-              hintText: 'Enter album UUID',
-              prefixIcon: Icon(Icons.album),
-            ),
-            validator: (value) {
-              if (value != null && value.isNotEmpty) {
-                final uuidRegex = RegExp(
-                  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-                  caseSensitive: false,
-                );
-                if (!uuidRegex.hasMatch(value)) {
-                  return 'Please enter a valid UUID';
-                }
-              }
-              return null;
-            },
+
+          // Album Selector
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<Map<String, dynamic>>(
+                  value: _selectedAlbum,
+                  decoration: InputDecoration(
+                    labelText: 'Album',
+                    prefixIcon: const Icon(Icons.album),
+                    hintText: _selectedGroup == null
+                        ? 'Select a group first'
+                        : 'Select an album',
+                  ),
+                  items: _albums.map((album) {
+                    return DropdownMenuItem(
+                      value: album,
+                      child: Text(album['title'] ?? ''),
+                    );
+                  }).toList(),
+                  onChanged: _selectedGroup == null ? null : (value) {
+                    setState(() => _selectedAlbum = value);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.add_circle,
+                  color: _selectedGroup == null
+                      ? AppTheme.darkGray
+                      : AppTheme.primaryPurple,
+                ),
+                onPressed: _selectedGroup == null ? null : _showAddAlbumDialog,
+                tooltip: 'Add new album',
+              ),
+            ],
           ),
+
+          if (_isLoadingAlbums)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );

@@ -39,7 +39,14 @@ app.get('/health', (req, res) => {
 
 // API Routes
 const addPhotocardRoute = require('./routes/add_photocard');
+const groupsRoute = require('./routes/groups');
+const membersRoute = require('./routes/members');
+const albumsRoute = require('./routes/albums');
+
 app.use('/api', addPhotocardRoute);
+app.use('/api', groupsRoute);
+app.use('/api', membersRoute);
+app.use('/api', albumsRoute);
 
 // 404 handler
 app.use((req, res) => {

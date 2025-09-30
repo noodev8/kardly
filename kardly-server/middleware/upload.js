@@ -24,8 +24,14 @@ const fileFilter = (req, file, cb) => {
     'image/webp'
   ];
 
-  // Check MIME type
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  // Allowed file extensions
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+
+  // Get file extension
+  const fileExtension = path.extname(file.originalname).toLowerCase();
+
+  // Check MIME type OR file extension (some devices don't set MIME type correctly)
+  if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
     cb(null, true);
   } else {
     cb(new Error('Invalid file type. Only JPG, JPEG, PNG, and WEBP images are allowed.'), false);
