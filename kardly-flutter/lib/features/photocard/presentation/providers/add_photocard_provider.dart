@@ -1,7 +1,6 @@
-/**
- * Provider for Add Photocard functionality
- * Manages state for adding new photocards to the database
- */
+/// Provider for Add Photocard functionality
+/// Manages state for adding new photocards to the database
+library;
 
 import 'package:flutter/foundation.dart';
 import '../../../../core/services/api_service.dart';

@@ -29,12 +29,10 @@ class AppTheme {
       colorScheme: const ColorScheme.light(
         primary: primaryPurple,
         secondary: accentPink,
-        surface: white,
-        background: lightGray,
+        surface: lightGray,
         onPrimary: white,
         onSecondary: charcoal,
         onSurface: charcoal,
-        onBackground: charcoal,
       ),
       textTheme: GoogleFonts.interTextTheme().copyWith(
         displayLarge: GoogleFonts.inter(
@@ -191,7 +189,7 @@ class AppTheme {
       cardTheme: CardTheme(
         color: white,
         elevation: 2,
-        shadowColor: primaryPurple.withOpacity(0.1),
+        shadowColor: primaryPurple.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -212,11 +210,9 @@ class AppTheme {
         primary: primaryPurple,
         secondary: accentPink,
         surface: Color(0xFF1E1E1E),
-        background: Color(0xFF121212),
         onPrimary: white,
         onSecondary: white,
         onSurface: white,
-        onBackground: white,
       ),
     );
   }

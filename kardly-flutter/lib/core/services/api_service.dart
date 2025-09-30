@@ -1,7 +1,6 @@
-/**
- * API Service for Kardly Backend
- * Handles all HTTP requests to the Node.js server
- */
+/// API Service for Kardly Backend
+/// Handles all HTTP requests to the Node.js server
+library;
 
 import 'dart:io';
 import 'package:http/http.dart' as http;

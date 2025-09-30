@@ -32,7 +32,7 @@ class CustomCard extends StatelessWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryPurple.withOpacity(0.08),
+            color: AppTheme.primaryPurple.withValues(alpha: 0.08),
             blurRadius: elevation ?? 8,
             offset: const Offset(0, 2),
           ),
@@ -267,11 +267,11 @@ class _ActionButton extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: AppTheme.white.withOpacity(0.9),
+          color: AppTheme.white.withValues(alpha: 0.9),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

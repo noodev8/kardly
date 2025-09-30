@@ -151,7 +151,7 @@ class IconButtonCustom extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppTheme.lightPurple.withOpacity(0.3),
+        color: backgroundColor ?? AppTheme.lightPurple.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(

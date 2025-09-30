@@ -1,10 +1,9 @@
-/**
- * Add Photocard Page
- * 
- * Allows users to upload a new photocard to the database.
- * Users can select an image from their device and optionally provide
- * metadata such as group, member, and album information.
- */
+/// Add Photocard Page
+///
+/// Allows users to upload a new photocard to the database.
+/// Users can select an image from their device and optionally provide
+/// metadata such as group, member, and album information.
+library;
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -239,18 +238,21 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
 
   void _showAddGroupDialog() {
     final nameController = TextEditingController();
+    final dialogContext = context;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add New Group'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Group Name',
-            hintText: 'e.g., BTS, BLACKPINK',
+        content: SingleChildScrollView(
+          child: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Group Name',
+              hintText: 'e.g., BTS, BLACKPINK',
+            ),
+            autofocus: true,
           ),
-          autofocus: true,
         ),
         actions: [
           TextButton(
@@ -287,7 +289,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                 await _loadAlbums();
 
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text(result['already_exists'] == true
                           ? 'Group already exists'
@@ -298,7 +300,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text('Failed to create group: ${e.toString()}'),
                       backgroundColor: AppTheme.error,
@@ -327,31 +329,34 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
 
     final nameController = TextEditingController();
     final stageNameController = TextEditingController();
+    final dialogContext = context;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add New Member'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Real Name',
-                hintText: 'e.g., Kim Taehyung',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Real Name',
+                  hintText: 'e.g., Kim Taehyung',
+                ),
+                autofocus: true,
               ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: stageNameController,
-              decoration: const InputDecoration(
-                labelText: 'Stage Name (Optional)',
-                hintText: 'e.g., V',
+              const SizedBox(height: 16),
+              TextField(
+                controller: stageNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Stage Name (Optional)',
+                  hintText: 'e.g., V',
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -392,7 +397,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                 });
 
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text(result['already_exists'] == true
                           ? 'Member already exists'
@@ -403,7 +408,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text('Failed to create member: ${e.toString()}'),
                       backgroundColor: AppTheme.error,
@@ -431,18 +436,21 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
     }
 
     final titleController = TextEditingController();
+    final dialogContext = context;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add New Album'),
-        content: TextField(
-          controller: titleController,
-          decoration: const InputDecoration(
-            labelText: 'Album Title',
-            hintText: 'e.g., Love Yourself: Tear',
+        content: SingleChildScrollView(
+          child: TextField(
+            controller: titleController,
+            decoration: const InputDecoration(
+              labelText: 'Album Title',
+              hintText: 'e.g., Love Yourself: Tear',
+            ),
+            autofocus: true,
           ),
-          autofocus: true,
         ),
         actions: [
           TextButton(
@@ -479,7 +487,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                 });
 
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text(result['already_exists'] == true
                           ? 'Album already exists'
@@ -490,7 +498,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text('Failed to create album: ${e.toString()}'),
                       backgroundColor: AppTheme.error,
@@ -691,6 +699,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
               Expanded(
                 child: DropdownButtonFormField<Map<String, dynamic>>(
                   value: _selectedGroup,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'K-pop Group',
                     prefixIcon: Icon(Icons.group),
@@ -699,7 +708,10 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                   items: _groups.map((group) {
                     return DropdownMenuItem(
                       value: group,
-                      child: Text(group['name'] ?? ''),
+                      child: Text(
+                        group['name'] ?? '',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -739,6 +751,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
               Expanded(
                 child: DropdownButtonFormField<Map<String, dynamic>>(
                   value: _selectedMember,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Member',
                     prefixIcon: const Icon(Icons.person),
@@ -752,7 +765,10 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                         : member['name'];
                     return DropdownMenuItem(
                       value: member,
-                      child: Text(displayName ?? ''),
+                      child: Text(
+                        displayName ?? '',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: _selectedGroup == null ? null : (value) {
@@ -787,6 +803,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
               Expanded(
                 child: DropdownButtonFormField<Map<String, dynamic>>(
                   value: _selectedAlbum,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Album',
                     prefixIcon: const Icon(Icons.album),
@@ -797,7 +814,10 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
                   items: _albums.map((album) {
                     return DropdownMenuItem(
                       value: album,
-                      child: Text(album['title'] ?? ''),
+                      child: Text(
+                        album['title'] ?? '',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: _selectedGroup == null ? null : (value) {
@@ -831,47 +851,11 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
   Widget _buildSubmitButton() {
     return Consumer<AddPhotocardProvider>(
       builder: (context, provider, child) {
-        return Column(
-          children: [
-            // Error Message
-            if (provider.error != null)
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: AppTheme.error,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        provider.error!,
-                        style: const TextStyle(
-                          color: AppTheme.error,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            
-            // Submit Button
-            PrimaryButton(
-              text: 'Upload Photocard',
-              icon: Icons.cloud_upload,
-              isLoading: provider.isLoading,
-              onPressed: _handleSubmit,
-            ),
-          ],
+        return PrimaryButton(
+          text: 'Upload Photocard',
+          icon: Icons.cloud_upload,
+          isLoading: provider.isLoading,
+          onPressed: _handleSubmit,
         );
       },
     );

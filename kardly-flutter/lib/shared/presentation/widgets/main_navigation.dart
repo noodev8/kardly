@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/theme/app_theme.dart';
 
@@ -83,7 +82,7 @@ class _MainNavigationState extends State<MainNavigation> {
           color: AppTheme.white,
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryPurple.withOpacity(0.1),
+              color: AppTheme.primaryPurple.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -91,7 +90,7 @@ class _MainNavigationState extends State<MainNavigation> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: _navigationItems.asMap().entries.map((entry) {
@@ -99,44 +98,52 @@ class _MainNavigationState extends State<MainNavigation> {
                 final NavigationItem item = entry.value;
                 final bool isSelected = index == _selectedIndex;
 
-                return GestureDetector(
-                  onTap: () => _onItemTapped(index),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                          ? AppTheme.lightPurple.withOpacity(0.3)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isSelected ? item.activeIcon : item.icon,
-                          color: isSelected 
-                              ? AppTheme.primaryPurple 
-                              : AppTheme.darkGray,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected 
-                                ? FontWeight.w600 
-                                : FontWeight.w500,
-                            color: isSelected 
-                                ? AppTheme.primaryPurple 
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => _onItemTapped(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.lightPurple.withValues(alpha: 0.3)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isSelected ? item.activeIcon : item.icon,
+                            color: isSelected
+                                ? AppTheme.primaryPurple
                                 : AppTheme.darkGray,
+                            size: 24,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Flexible(
+                            child: Text(
+                              item.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? AppTheme.primaryPurple
+                                    : AppTheme.darkGray,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
