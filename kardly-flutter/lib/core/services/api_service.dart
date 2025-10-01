@@ -349,7 +349,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 
@@ -390,7 +390,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 
@@ -433,7 +433,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 
@@ -482,7 +482,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 
@@ -525,7 +525,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 
@@ -570,7 +570,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 

@@ -9,12 +9,14 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * POST /api/members
- * Get all members or filter by group
+ * Get all members for the authenticated user or filter by group
+ * Requires authentication
  */
-router.post('/members', [
+router.post('/members', authenticateToken, [
   body('group_id').optional().isUUID(),
   body('search').optional().isString().trim(),
 ], async (req, res) => {
@@ -26,23 +28,24 @@ router.post('/members', [
     }
 
     const { group_id, search } = req.body;
+    const user_id = req.user.id;
 
     let query = `
-      SELECT 
-        m.id, 
-        m.group_id, 
-        m.name, 
-        m.stage_name, 
-        m.image_url, 
-        m.is_active, 
+      SELECT
+        m.id,
+        m.group_id,
+        m.name,
+        m.stage_name,
+        m.image_url,
+        m.is_active,
         m.created_at,
         g.name as group_name
       FROM group_members m
       LEFT JOIN kpop_groups g ON m.group_id = g.id
-      WHERE 1=1
+      WHERE m.user_id = $1
     `;
-    const params = [];
-    let paramCount = 0;
+    const params = [user_id];
+    let paramCount = 1;
 
     // Filter by group if provided
     if (group_id) {
@@ -75,9 +78,10 @@ router.post('/members', [
 
 /**
  * POST /api/members/create
- * Create a new group member
+ * Create a new group member for the authenticated user
+ * Requires authentication
  */
-router.post('/members/create', [
+router.post('/members/create', authenticateToken, [
   body('group_id').notEmpty().isUUID(),
   body('name').notEmpty().trim().isLength({ min: 1, max: 100 }),
   body('stage_name').optional().trim().isLength({ max: 100 }),
@@ -91,23 +95,24 @@ router.post('/members/create', [
     }
 
     const { group_id, name, stage_name, image_url } = req.body;
+    const user_id = req.user.id;
 
-    // Verify group exists
+    // Verify group exists and belongs to user
     const groupCheck = await db.query(
-      'SELECT id, name FROM kpop_groups WHERE id = $1',
-      [group_id]
+      'SELECT id, name FROM kpop_groups WHERE id = $1 AND user_id = $2',
+      [group_id, user_id]
     );
 
     if (groupCheck.rows.length === 0) {
-      return sendError(res, 'INVALID_GROUP', 'Group does not exist', 400);
+      return sendError(res, 'INVALID_GROUP', 'Group does not exist or does not belong to you', 400);
     }
 
-    // Check if member already exists in this group
+    // Check if member already exists in this group for this user
     const existingMember = await db.query(
       `SELECT id, name, stage_name
        FROM group_members
-       WHERE group_id = $1 AND (LOWER(name) = LOWER($2) OR LOWER(stage_name) = LOWER($3))`,
-      [group_id, name, stage_name || name]
+       WHERE user_id = $1 AND group_id = $2 AND (LOWER(name) = LOWER($3) OR LOWER(stage_name) = LOWER($4))`,
+      [user_id, group_id, name, stage_name || name]
     );
 
     if (existingMember.rows.length > 0) {
@@ -121,10 +126,10 @@ router.post('/members/create', [
 
     // Create new member
     const result = await db.query(
-      `INSERT INTO group_members (group_id, name, stage_name, image_url, is_active)
-       VALUES ($1, $2, $3, $4, true)
+      `INSERT INTO group_members (user_id, group_id, name, stage_name, image_url, is_active)
+       VALUES ($1, $2, $3, $4, $5, true)
        RETURNING id, group_id, name, stage_name, image_url, is_active, created_at`,
-      [group_id, name, stage_name || null, image_url || null]
+      [user_id, group_id, name, stage_name || null, image_url || null]
     );
 
     const newMember = result.rows[0];

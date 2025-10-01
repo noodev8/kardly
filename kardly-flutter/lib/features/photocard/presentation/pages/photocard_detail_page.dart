@@ -97,6 +97,8 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         actions: [
           if (!_isLoading && photocardData != null)

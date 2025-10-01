@@ -9,12 +9,14 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * POST /api/albums
- * Get all albums or filter by group
+ * Get all albums for the authenticated user or filter by group
+ * Requires authentication
  */
-router.post('/albums', [
+router.post('/albums', authenticateToken, [
   body('group_id').optional().isUUID(),
   body('search').optional().isString().trim(),
 ], async (req, res) => {
@@ -26,6 +28,7 @@ router.post('/albums', [
     }
 
     const { group_id, search } = req.body;
+    const user_id = req.user.id;
 
     let query = `
       SELECT
@@ -37,10 +40,10 @@ router.post('/albums', [
         g.name as group_name
       FROM albums a
       LEFT JOIN kpop_groups g ON a.group_id = g.id
-      WHERE 1=1
+      WHERE a.user_id = $1
     `;
-    const params = [];
-    let paramCount = 0;
+    const params = [user_id];
+    let paramCount = 1;
 
     // Filter by group if provided
     if (group_id) {
@@ -73,9 +76,10 @@ router.post('/albums', [
 
 /**
  * POST /api/albums/create
- * Create a new album
+ * Create a new album for the authenticated user
+ * Requires authentication
  */
-router.post('/albums/create', [
+router.post('/albums/create', authenticateToken, [
   body('group_id').notEmpty().isUUID(),
   body('title').notEmpty().trim().isLength({ min: 1, max: 200 }),
   body('cover_image_url').optional().isURL(),
@@ -88,21 +92,22 @@ router.post('/albums/create', [
     }
 
     const { group_id, title, cover_image_url } = req.body;
+    const user_id = req.user.id;
 
-    // Verify group exists
+    // Verify group exists and belongs to user
     const groupCheck = await db.query(
-      'SELECT id, name FROM kpop_groups WHERE id = $1',
-      [group_id]
+      'SELECT id, name FROM kpop_groups WHERE id = $1 AND user_id = $2',
+      [group_id, user_id]
     );
 
     if (groupCheck.rows.length === 0) {
-      return sendError(res, 'INVALID_GROUP', 'Group does not exist', 400);
+      return sendError(res, 'INVALID_GROUP', 'Group does not exist or does not belong to you', 400);
     }
 
-    // Check if album already exists for this group
+    // Check if album already exists for this group and user
     const existingAlbum = await db.query(
-      'SELECT id, title FROM albums WHERE group_id = $1 AND LOWER(title) = LOWER($2)',
-      [group_id, title]
+      'SELECT id, title FROM albums WHERE user_id = $1 AND group_id = $2 AND LOWER(title) = LOWER($3)',
+      [user_id, group_id, title]
     );
 
     if (existingAlbum.rows.length > 0) {
@@ -115,10 +120,10 @@ router.post('/albums/create', [
 
     // Create new album
     const result = await db.query(
-      `INSERT INTO albums (group_id, title, cover_image_url)
-       VALUES ($1, $2, $3)
+      `INSERT INTO albums (user_id, group_id, title, cover_image_url)
+       VALUES ($1, $2, $3, $4)
        RETURNING id, group_id, title, cover_image_url, created_at`,
-      [group_id, title, cover_image_url || null]
+      [user_id, group_id, title, cover_image_url || null]
     );
 
     const newAlbum = result.rows[0];

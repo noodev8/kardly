@@ -9,12 +9,14 @@ const router = express.Router();
 const { body, query, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * POST /api/groups
- * Get all groups or search by name
+ * Get all groups for the authenticated user or search by name
+ * Requires authentication
  */
-router.post('/groups', [
+router.post('/groups', authenticateToken, [
   body('search').optional().isString().trim(),
 ], async (req, res) => {
   try {
@@ -25,13 +27,14 @@ router.post('/groups', [
     }
 
     const { search } = req.body;
+    const user_id = req.user.id;
 
-    let query = 'SELECT id, name, image_url, is_active, created_at FROM kpop_groups WHERE 1=1';
-    const params = [];
+    let query = 'SELECT id, name, image_url, is_active, created_at FROM kpop_groups WHERE user_id = $1';
+    const params = [user_id];
 
     // Add search filter if provided
     if (search) {
-      query += ' AND LOWER(name) LIKE LOWER($1)';
+      query += ' AND LOWER(name) LIKE LOWER($2)';
       params.push(`%${search}%`);
     }
 
@@ -52,9 +55,10 @@ router.post('/groups', [
 
 /**
  * POST /api/groups/create
- * Create a new K-pop group
+ * Create a new K-pop group for the authenticated user
+ * Requires authentication
  */
-router.post('/groups/create', [
+router.post('/groups/create', authenticateToken, [
   body('name').notEmpty().trim().isLength({ min: 1, max: 100 }),
   body('image_url').optional().isURL(),
 ], async (req, res) => {
@@ -66,11 +70,12 @@ router.post('/groups/create', [
     }
 
     const { name, image_url } = req.body;
+    const user_id = req.user.id;
 
-    // Check if group already exists
+    // Check if group already exists for this user
     const existingGroup = await db.query(
-      'SELECT id, name FROM kpop_groups WHERE LOWER(name) = LOWER($1)',
-      [name]
+      'SELECT id, name FROM kpop_groups WHERE user_id = $1 AND LOWER(name) = LOWER($2)',
+      [user_id, name]
     );
 
     if (existingGroup.rows.length > 0) {
@@ -83,10 +88,10 @@ router.post('/groups/create', [
 
     // Create new group
     const result = await db.query(
-      `INSERT INTO kpop_groups (name, image_url, is_active)
-       VALUES ($1, $2, true)
+      `INSERT INTO kpop_groups (user_id, name, image_url, is_active)
+       VALUES ($1, $2, $3, true)
        RETURNING id, name, image_url, is_active, created_at`,
-      [name, image_url || null]
+      [user_id, name, image_url || null]
     );
 
     const newGroup = result.rows[0];

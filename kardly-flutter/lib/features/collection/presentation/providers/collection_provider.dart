@@ -185,8 +185,8 @@ class Photocard {
       rarity: 'Common', // We don't have rarity in DB yet
       estimatedValue: 0.0, // We don't have value in DB yet
       imageUrl: json['image_url'],
-      isOwned: true, // All fetched cards are owned for now
-      isWishlisted: false,
+      isOwned: json['is_owned'] ?? false, // Get from collection status
+      isWishlisted: json['is_wishlisted'] ?? false, // Get from collection status
     );
   }
 }
