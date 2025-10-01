@@ -49,19 +49,24 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * POST /api/photocards
- * Get all photocards with optional filters
+ * Get all photocards for the authenticated user with optional filters
+ * Requires authentication - only returns photocards owned by the user
  */
-router.post('/photocards', [
-  body('group_id').optional().isUUID(),
-  body('member_id').optional().isUUID(),
-  body('album_id').optional().isUUID(),
-  body('search').optional().isString().trim(),
-  body('limit').optional().isInt({ min: 1, max: 100 }),
-  body('offset').optional().isInt({ min: 0 }),
-], async (req, res) => {
+router.post('/photocards',
+  authenticateToken,
+  [
+    body('group_id').optional().isUUID(),
+    body('member_id').optional().isUUID(),
+    body('album_id').optional().isUUID(),
+    body('search').optional().isString().trim(),
+    body('limit').optional().isInt({ min: 1, max: 100 }),
+    body('offset').optional().isInt({ min: 0 }),
+  ],
+  async (req, res) => {
   try {
     // Validate request
     const errors = validationResult(req);
@@ -78,10 +83,11 @@ router.post('/photocards', [
       offset = 0 
     } = req.body;
 
-    // Build query
+    // Build query - filter by authenticated user
     let query = `
       SELECT
         p.id,
+        p.user_id,
         p.image_url,
         p.group_id,
         g.name as group_name,
@@ -96,11 +102,11 @@ router.post('/photocards', [
       LEFT JOIN kpop_groups g ON p.group_id = g.id
       LEFT JOIN group_members m ON p.member_id = m.id
       LEFT JOIN albums a ON p.album_id = a.id
-      WHERE 1=1
+      WHERE p.user_id = $1
     `;
-    
-    const params = [];
-    let paramCount = 0;
+
+    const params = [req.user.id];
+    let paramCount = 1;
 
     // Filter by group
     if (group_id) {

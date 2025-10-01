@@ -1,0 +1,207 @@
+/**
+ * Collection Routes
+ * 
+ * Endpoints for managing user's photocard collection status (owned/wishlist)
+ */
+
+const express = require('express');
+const router = express.Router();
+const { body, validationResult } = require('express-validator');
+const db = require('../config/database');
+const { sendSuccess, sendError } = require('../utils/response');
+const { authenticateToken } = require('../middleware/auth');
+
+/**
+ * POST /api/collection/toggle-owned
+ * Toggle owned status for a photocard
+ */
+router.post('/collection/toggle-owned', 
+  authenticateToken,
+  [
+    body('photocard_id').notEmpty().isUUID().withMessage('photocard_id must be a valid UUID'),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid request parameters', 400);
+      }
+
+      const { photocard_id } = req.body;
+      const user_id = req.user.id;
+
+      // Check if photocard exists and belongs to user
+      const photocardCheck = await db.query(
+        'SELECT id, user_id FROM photocards WHERE id = $1',
+        [photocard_id]
+      );
+
+      if (photocardCheck.rows.length === 0) {
+        return sendError(res, 'PHOTOCARD_NOT_FOUND', 'Photocard not found', 404);
+      }
+
+      if (photocardCheck.rows[0].user_id !== user_id) {
+        return sendError(res, 'UNAUTHORIZED', 'You do not own this photocard', 403);
+      }
+
+      // Check if collection entry exists
+      const collectionCheck = await db.query(
+        'SELECT id, is_owned FROM user_collections WHERE user_id = $1 AND photocard_id = $2',
+        [user_id, photocard_id]
+      );
+
+      let isOwned;
+      if (collectionCheck.rows.length === 0) {
+        // Create new collection entry with is_owned = true
+        await db.query(
+          'INSERT INTO user_collections (user_id, photocard_id, is_owned) VALUES ($1, $2, $3)',
+          [user_id, photocard_id, true]
+        );
+        isOwned = true;
+      } else {
+        // Toggle existing is_owned status
+        isOwned = !collectionCheck.rows[0].is_owned;
+        await db.query(
+          'UPDATE user_collections SET is_owned = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND photocard_id = $3',
+          [isOwned, user_id, photocard_id]
+        );
+      }
+
+      return sendSuccess(res, {
+        photocard_id,
+        is_owned: isOwned,
+        message: isOwned ? 'Added to collection' : 'Removed from collection'
+      });
+    } catch (error) {
+      console.error('Error toggling owned status:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to update collection', 500);
+    }
+  }
+);
+
+/**
+ * POST /api/collection/toggle-wishlist
+ * Toggle wishlist status for a photocard
+ */
+router.post('/collection/toggle-wishlist', 
+  authenticateToken,
+  [
+    body('photocard_id').notEmpty().isUUID().withMessage('photocard_id must be a valid UUID'),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid request parameters', 400);
+      }
+
+      const { photocard_id } = req.body;
+      const user_id = req.user.id;
+
+      // Check if photocard exists and belongs to user
+      const photocardCheck = await db.query(
+        'SELECT id, user_id FROM photocards WHERE id = $1',
+        [photocard_id]
+      );
+
+      if (photocardCheck.rows.length === 0) {
+        return sendError(res, 'PHOTOCARD_NOT_FOUND', 'Photocard not found', 404);
+      }
+
+      if (photocardCheck.rows[0].user_id !== user_id) {
+        return sendError(res, 'UNAUTHORIZED', 'You do not own this photocard', 403);
+      }
+
+      // Check if collection entry exists
+      const collectionCheck = await db.query(
+        'SELECT id, is_wishlisted FROM user_collections WHERE user_id = $1 AND photocard_id = $2',
+        [user_id, photocard_id]
+      );
+
+      let isWishlisted;
+      if (collectionCheck.rows.length === 0) {
+        // Create new collection entry with is_wishlisted = true
+        await db.query(
+          'INSERT INTO user_collections (user_id, photocard_id, is_wishlisted) VALUES ($1, $2, $3)',
+          [user_id, photocard_id, true]
+        );
+        isWishlisted = true;
+      } else {
+        // Toggle existing is_wishlisted status
+        isWishlisted = !collectionCheck.rows[0].is_wishlisted;
+        await db.query(
+          'UPDATE user_collections SET is_wishlisted = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND photocard_id = $3',
+          [isWishlisted, user_id, photocard_id]
+        );
+      }
+
+      return sendSuccess(res, {
+        photocard_id,
+        is_wishlisted: isWishlisted,
+        message: isWishlisted ? 'Added to wishlist' : 'Removed from wishlist'
+      });
+    } catch (error) {
+      console.error('Error toggling wishlist status:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to update wishlist', 500);
+    }
+  }
+);
+
+/**
+ * POST /api/collection/status
+ * Get collection status for photocards (owned/wishlist flags)
+ */
+router.post('/collection/status',
+  authenticateToken,
+  [
+    body('photocard_ids').isArray().withMessage('photocard_ids must be an array'),
+    body('photocard_ids.*').isUUID().withMessage('Each photocard_id must be a valid UUID'),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid request parameters', 400);
+      }
+
+      const { photocard_ids } = req.body;
+      const user_id = req.user.id;
+
+      if (photocard_ids.length === 0) {
+        return sendSuccess(res, { statuses: [] });
+      }
+
+      // Get collection status for all requested photocards
+      const result = await db.query(
+        `SELECT photocard_id, is_owned, is_wishlisted 
+         FROM user_collections 
+         WHERE user_id = $1 AND photocard_id = ANY($2)`,
+        [user_id, photocard_ids]
+      );
+
+      // Create a map of photocard_id to status
+      const statusMap = {};
+      result.rows.forEach(row => {
+        statusMap[row.photocard_id] = {
+          is_owned: row.is_owned,
+          is_wishlisted: row.is_wishlisted
+        };
+      });
+
+      // Fill in missing entries with default values
+      const statuses = photocard_ids.map(id => ({
+        photocard_id: id,
+        is_owned: statusMap[id]?.is_owned || false,
+        is_wishlisted: statusMap[id]?.is_wishlisted || false
+      }));
+
+      return sendSuccess(res, { statuses });
+    } catch (error) {
+      console.error('Error getting collection status:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to get collection status', 500);
+    }
+  }
+);
+
+module.exports = router;
+

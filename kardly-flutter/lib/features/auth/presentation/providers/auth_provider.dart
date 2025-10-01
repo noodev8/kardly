@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
@@ -16,18 +17,26 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implement actual authentication
-      await Future.delayed(const Duration(seconds: 2));
-      
-      _currentUser = User(
-        id: '1',
+      // Call the login API
+      final response = await ApiService.login(
         email: email,
-        username: 'KpopFan2024',
-        isPremium: false,
+        password: password,
+      );
+
+      // Token is automatically set in ApiService
+      final userData = response['user'];
+
+      _currentUser = User(
+        id: userData['id'],
+        email: userData['email'],
+        username: userData['username'],
+        isPremium: userData['isPremium'] ?? false,
       );
       _isAuthenticated = true;
+    } on ApiException catch (e) {
+      _error = e.message;
     } catch (e) {
-      _error = e.toString();
+      _error = 'An unexpected error occurred. Please try again.';
     } finally {
       _setLoading(false);
     }
@@ -38,18 +47,27 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Implement actual registration
-      await Future.delayed(const Duration(seconds: 2));
-      
-      _currentUser = User(
-        id: '1',
+      // Call the register API
+      final response = await ApiService.register(
         email: email,
         username: username,
-        isPremium: false,
+        password: password,
+      );
+
+      // Token is automatically set in ApiService
+      final userData = response['user'];
+
+      _currentUser = User(
+        id: userData['id'],
+        email: userData['email'],
+        username: userData['username'],
+        isPremium: userData['isPremium'] ?? false,
       );
       _isAuthenticated = true;
+    } on ApiException catch (e) {
+      _error = e.message;
     } catch (e) {
-      _error = e.toString();
+      _error = 'An unexpected error occurred. Please try again.';
     } finally {
       _setLoading(false);
     }
@@ -58,6 +76,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     _isAuthenticated = false;
     _currentUser = null;
+    ApiService.setAuthToken(null);
     notifyListeners();
   }
 

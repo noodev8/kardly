@@ -14,7 +14,7 @@ import '../../shared/presentation/widgets/main_navigation.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/login',
     routes: [
       // Onboarding and Auth Routes
       GoRoute(

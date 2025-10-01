@@ -90,6 +90,7 @@ ALTER TABLE public.kpop_groups OWNER TO kardly_prod_user;
 
 CREATE TABLE public.photocards (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
     group_id uuid,
     member_id uuid,
     album_id uuid,
@@ -306,6 +307,14 @@ CREATE INDEX idx_photocards_member_id ON public.photocards USING btree (member_i
 
 
 --
+-- TOC entry 3323 (class 1259 OID 21523)
+-- Name: idx_photocards_user_id; Type: INDEX; Schema: public; Owner: kardly_prod_user
+--
+
+CREATE INDEX idx_photocards_user_id ON public.photocards USING btree (user_id);
+
+
+--
 -- TOC entry 3325 (class 1259 OID 21525)
 -- Name: idx_user_collections_is_owned; Type: INDEX; Schema: public; Owner: kardly_prod_user
 --
@@ -404,6 +413,15 @@ ALTER TABLE ONLY public.photocards
 
 ALTER TABLE ONLY public.photocards
     ADD CONSTRAINT photocards_member_id_fkey FOREIGN KEY (member_id) REFERENCES public.group_members(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3344 (class 2606 OID 21450)
+-- Name: photocards photocards_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kardly_prod_user
+--
+
+ALTER TABLE ONLY public.photocards
+    ADD CONSTRAINT photocards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

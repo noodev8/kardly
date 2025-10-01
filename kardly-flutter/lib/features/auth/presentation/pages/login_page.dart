@@ -292,12 +292,25 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleSignIn(AuthProvider authProvider) async {
     if (_formKey.currentState!.validate()) {
+      // Dismiss keyboard
+      FocusScope.of(context).unfocus();
+
       await authProvider.signIn(
         _emailController.text.trim(),
         _passwordController.text,
       );
-      
+
       if (authProvider.isAuthenticated && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Welcome back!'),
+            backgroundColor: AppTheme.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to home
         context.go('/home');
       }
     }

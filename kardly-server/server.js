@@ -38,17 +38,21 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
+const authRoute = require('./routes/auth');
 const addPhotocardRoute = require('./routes/add_photocard');
 const photocardsRoute = require('./routes/photocards');
 const groupsRoute = require('./routes/groups');
 const membersRoute = require('./routes/members');
 const albumsRoute = require('./routes/albums');
+const collectionRoute = require('./routes/collection');
 
+app.use('/api', authRoute);
 app.use('/api', addPhotocardRoute);
 app.use('/api', photocardsRoute);
 app.use('/api', groupsRoute);
 app.use('/api', membersRoute);
 app.use('/api', albumsRoute);
+app.use('/api', collectionRoute);
 
 // 404 handler
 app.use((req, res) => {

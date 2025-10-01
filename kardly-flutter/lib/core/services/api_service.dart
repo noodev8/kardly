@@ -14,6 +14,43 @@ class ApiService {
   // For production: 'https://your-production-url.com'
   static const String baseUrl = 'http://10.0.2.2:3000';
 
+  // Authentication token storage
+  static String? _authToken;
+
+  /// Set the authentication token
+  static void setAuthToken(String? token) {
+    _authToken = token;
+  }
+
+  /// Get the authentication token
+  static String? getAuthToken() {
+    return _authToken;
+  }
+
+  /// Get headers with authentication if token is available
+  static Map<String, String> _getHeaders({bool includeAuth = true}) {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    if (includeAuth && _authToken != null) {
+      headers['Authorization'] = 'Bearer $_authToken';
+    }
+
+    return headers;
+  }
+
+  /// Get headers for multipart requests with authentication
+  static Map<String, String> _getMultipartHeaders() {
+    final headers = <String, String>{};
+
+    if (_authToken != null) {
+      headers['Authorization'] = 'Bearer $_authToken';
+    }
+
+    return headers;
+  }
+
   /// Get all photocards with optional filters
   ///
   /// Parameters:
@@ -57,7 +94,7 @@ class ApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(body),
       );
 
@@ -106,14 +143,17 @@ class ApiService {
     try {
       final uri = Uri.parse('$baseUrl/api/add_photocard');
       final request = http.MultipartRequest('POST', uri);
-      
+
+      // Add authentication headers
+      request.headers.addAll(_getMultipartHeaders());
+
       // Add image file
       final imageFile = await http.MultipartFile.fromPath(
         'image',
         imagePath,
       );
       request.files.add(imageFile);
-      
+
       // Add optional fields
       if (groupId != null && groupId.isNotEmpty) {
         request.fields['group_id'] = groupId;
@@ -124,7 +164,7 @@ class ApiService {
       if (albumId != null && albumId.isNotEmpty) {
         request.fields['album_id'] = albumId;
       }
-      
+
       // Send request
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -161,6 +201,123 @@ class ApiService {
     }
   }
   
+  /// Register a new user
+  static Future<Map<String, dynamic>> register({
+    required String email,
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/register');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(includeAuth: false),
+        body: json.encode({
+          'email': email,
+          'username': username,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        // Store the token
+        if (data['token'] != null) {
+          setAuthToken(data['token']);
+        }
+        return data;
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Registration failed',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Login existing user
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/login');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(includeAuth: false),
+        body: json.encode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Store the token
+        if (data['token'] != null) {
+          setAuthToken(data['token']);
+        }
+        return data;
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Login failed',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Verify JWT token and get user info
+  static Future<Map<String, dynamic>> verifyToken() async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/verify');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Token verification failed',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
   /// Health check endpoint
   static Future<bool> checkServerHealth() async {
     try {
@@ -436,6 +593,100 @@ class ApiService {
       );
     }
   }
+
+  /// Toggle owned status for a photocard
+  static Future<Map<String, dynamic>> toggleOwned(String photocardId) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/collection/toggle-owned');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(),
+        body: json.encode({'photocard_id': photocardId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to toggle owned status',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Toggle wishlist status for a photocard
+  static Future<Map<String, dynamic>> toggleWishlist(String photocardId) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/collection/toggle-wishlist');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(),
+        body: json.encode({'photocard_id': photocardId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to toggle wishlist status',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Get collection status for multiple photocards
+  static Future<List<Map<String, dynamic>>> getCollectionStatus(List<String> photocardIds) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/collection/status');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(),
+        body: json.encode({'photocard_ids': photocardIds}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['statuses'] ?? []);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to get collection status',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
 }
 
 /// Custom exception for API errors
@@ -458,6 +709,18 @@ class ApiException implements Exception {
     switch (returnCode) {
       case 'VALIDATION_ERROR':
         return 'Please check your input and try again.';
+      case 'EMAIL_EXISTS':
+        return 'This email is already registered. Please login instead.';
+      case 'USERNAME_EXISTS':
+        return 'This username is already taken. Please choose another.';
+      case 'INVALID_CREDENTIALS':
+        return 'Invalid email or password. Please try again.';
+      case 'NO_TOKEN':
+        return 'Please login to continue.';
+      case 'TOKEN_EXPIRED':
+        return 'Your session has expired. Please login again.';
+      case 'INVALID_TOKEN':
+        return 'Invalid session. Please login again.';
       case 'INVALID_GROUP':
         return 'The selected group does not exist.';
       case 'INVALID_MEMBER':

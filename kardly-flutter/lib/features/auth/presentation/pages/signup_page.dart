@@ -323,14 +323,37 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Future<void> _handleSignUp(AuthProvider authProvider) async {
-    if (_formKey.currentState!.validate() && _acceptTerms) {
+    if (!_acceptTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please accept the terms and conditions'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+
+    if (_formKey.currentState!.validate()) {
+      // Dismiss keyboard
+      FocusScope.of(context).unfocus();
+
       await authProvider.signUp(
         _emailController.text.trim(),
         _passwordController.text,
         _usernameController.text.trim(),
       );
-      
+
       if (authProvider.isAuthenticated && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome, ${_usernameController.text}!'),
+            backgroundColor: AppTheme.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to home
         context.go('/home');
       }
     }

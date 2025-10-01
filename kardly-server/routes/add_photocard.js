@@ -43,23 +43,26 @@ const os = require('os');
 const { getClient } = require('../config/database');
 const { uploadImage, deleteImage } = require('../config/cloudinary');
 const { upload, handleUploadError } = require('../middleware/upload');
-const { 
-  validateAddPhotocard, 
-  checkValidationResult, 
-  validateImagePresent 
+const {
+  validateAddPhotocard,
+  checkValidationResult,
+  validateImagePresent
 } = require('../middleware/validation');
-const { 
-  sendSuccess, 
-  sendError, 
-  sendServerError 
+const { authenticateToken } = require('../middleware/auth');
+const {
+  sendSuccess,
+  sendError,
+  sendServerError
 } = require('../utils/response');
 
 /**
  * POST /api/add_photocard
  * Add a new photocard with image upload
+ * Requires authentication - photocard will be associated with the authenticated user
  */
 router.post(
   '/add_photocard',
+  authenticateToken,
   upload.single('image'),
   handleUploadError,
   validateImagePresent,
@@ -167,14 +170,15 @@ router.post(
         );
       }
 
-      // Insert photocard into database
+      // Insert photocard into database with user_id from authenticated user
       const insertQuery = `
-        INSERT INTO photocards (group_id, member_id, album_id, image_url)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, image_url, created_at, updated_at
+        INSERT INTO photocards (user_id, group_id, member_id, album_id, image_url)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, user_id, image_url, created_at, updated_at
       `;
-      
+
       const insertValues = [
+        req.user.id,
         group_id || null,
         member_id || null,
         album_id || null,

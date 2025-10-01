@@ -43,26 +43,71 @@ class CollectionProvider extends ChangeNotifier {
     }
   }
 
-  void toggleOwned(String cardId) {
-    final cardIndex = _ownedCards.indexWhere((card) => card.id == cardId);
-    if (cardIndex != -1) {
-      _ownedCards.removeAt(cardIndex);
-    } else {
-      // Add to owned (would need to get card details)
-      // TODO: Implement proper card addition
+  Future<void> toggleOwned(String cardId) async {
+    try {
+      final response = await ApiService.toggleOwned(cardId);
+      final isOwned = response['is_owned'] ?? false;
+
+      // Update local state
+      final cardIndex = _ownedCards.indexWhere((card) => card.id == cardId);
+      if (cardIndex != -1) {
+        final card = _ownedCards[cardIndex];
+        _ownedCards[cardIndex] = Photocard(
+          id: card.id,
+          groupName: card.groupName,
+          memberName: card.memberName,
+          albumName: card.albumName,
+          rarity: card.rarity,
+          estimatedValue: card.estimatedValue,
+          imageUrl: card.imageUrl,
+          isOwned: isOwned,
+          isWishlisted: card.isWishlisted,
+        );
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print('Error toggling owned status: $e');
+      _error = e.toString();
+      notifyListeners();
     }
-    notifyListeners();
   }
 
-  void toggleWishlist(String cardId) {
-    final cardIndex = _wishlistCards.indexWhere((card) => card.id == cardId);
-    if (cardIndex != -1) {
-      _wishlistCards.removeAt(cardIndex);
-    } else {
-      // Add to wishlist
-      // TODO: Implement proper card addition
+  Future<void> toggleWishlist(String cardId) async {
+    try {
+      final response = await ApiService.toggleWishlist(cardId);
+      final isWishlisted = response['is_wishlisted'] ?? false;
+
+      // Update local state
+      final ownedIndex = _ownedCards.indexWhere((card) => card.id == cardId);
+      if (ownedIndex != -1) {
+        final card = _ownedCards[ownedIndex];
+        _ownedCards[ownedIndex] = Photocard(
+          id: card.id,
+          groupName: card.groupName,
+          memberName: card.memberName,
+          albumName: card.albumName,
+          rarity: card.rarity,
+          estimatedValue: card.estimatedValue,
+          imageUrl: card.imageUrl,
+          isOwned: card.isOwned,
+          isWishlisted: isWishlisted,
+        );
+
+        // Move to/from wishlist
+        if (isWishlisted && !_wishlistCards.any((c) => c.id == cardId)) {
+          _wishlistCards.add(_ownedCards[ownedIndex]);
+        } else if (!isWishlisted) {
+          _wishlistCards.removeWhere((c) => c.id == cardId);
+        }
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print('Error toggling wishlist status: $e');
+      _error = e.toString();
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   List<Photocard> _generateMockCards(int count, bool isOwned) {
