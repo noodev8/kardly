@@ -83,7 +83,7 @@ router.post('/photocards',
       offset = 0 
     } = req.body;
 
-    // Build query - filter by authenticated user
+    // Build query - filter by authenticated user and include collection status
     let query = `
       SELECT
         p.id,
@@ -97,11 +97,14 @@ router.post('/photocards',
         p.album_id,
         a.title as album_title,
         p.created_at,
-        p.updated_at
+        p.updated_at,
+        COALESCE(uc.is_owned, false) as is_owned,
+        COALESCE(uc.is_wishlisted, false) as is_wishlisted
       FROM photocards p
       LEFT JOIN kpop_groups g ON p.group_id = g.id
       LEFT JOIN group_members m ON p.member_id = m.id
       LEFT JOIN albums a ON p.album_id = a.id
+      LEFT JOIN user_collections uc ON p.id = uc.photocard_id AND uc.user_id = p.user_id
       WHERE p.user_id = $1
     `;
 

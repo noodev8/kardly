@@ -173,8 +173,8 @@ router.post('/collection/status',
 
       // Get collection status for all requested photocards
       const result = await db.query(
-        `SELECT photocard_id, is_owned, is_wishlisted 
-         FROM user_collections 
+        `SELECT photocard_id, is_owned, is_wishlisted
+         FROM user_collections
          WHERE user_id = $1 AND photocard_id = ANY($2)`,
         [user_id, photocard_ids]
       );
@@ -199,6 +199,80 @@ router.post('/collection/status',
     } catch (error) {
       console.error('Error getting collection status:', error);
       return sendError(res, 'SERVER_ERROR', 'Failed to get collection status', 500);
+    }
+  }
+);
+
+/**
+ * POST /api/collection/photocards
+ * Get photocards by collection status (owned, wishlist, unallocated)
+ */
+router.post('/collection/photocards',
+  authenticateToken,
+  [
+    body('status').isIn(['owned', 'wishlist', 'unallocated']).withMessage('status must be owned, wishlist, or unallocated'),
+    body('limit').optional().isInt({ min: 1, max: 100 }),
+    body('offset').optional().isInt({ min: 0 }),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid request parameters', 400);
+      }
+
+      const { status, limit = 50, offset = 0 } = req.body;
+      const user_id = req.user.id;
+
+      let whereClause;
+      switch (status) {
+        case 'owned':
+          whereClause = 'uc.is_owned = true';
+          break;
+        case 'wishlist':
+          whereClause = 'uc.is_wishlisted = true';
+          break;
+        case 'unallocated':
+          whereClause = 'uc.is_owned = false AND uc.is_wishlisted = false';
+          break;
+      }
+
+      const query = `
+        SELECT
+          p.id,
+          p.user_id,
+          p.image_url,
+          p.group_id,
+          g.name as group_name,
+          p.member_id,
+          m.name as member_name,
+          m.stage_name as member_stage_name,
+          p.album_id,
+          a.title as album_title,
+          p.created_at,
+          p.updated_at,
+          uc.is_owned,
+          uc.is_wishlisted
+        FROM photocards p
+        INNER JOIN user_collections uc ON p.id = uc.photocard_id
+        LEFT JOIN kpop_groups g ON p.group_id = g.id
+        LEFT JOIN group_members m ON p.member_id = m.id
+        LEFT JOIN albums a ON p.album_id = a.id
+        WHERE p.user_id = $1 AND uc.user_id = $1 AND ${whereClause}
+        ORDER BY p.created_at DESC
+        LIMIT $2 OFFSET $3
+      `;
+
+      const result = await db.query(query, [user_id, limit, offset]);
+
+      return sendSuccess(res, {
+        photocards: result.rows,
+        count: result.rows.length,
+        status: status
+      });
+    } catch (error) {
+      console.error('Error getting collection photocards:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to get collection photocards', 500);
     }
   }
 );

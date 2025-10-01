@@ -656,6 +656,45 @@ class ApiService {
     }
   }
 
+  /// Get photocards by collection status (owned, wishlist, unallocated)
+  static Future<Map<String, dynamic>> getCollectionPhotocards({
+    required String status, // 'owned', 'wishlist', or 'unallocated'
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/collection/photocards');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(),
+        body: json.encode({
+          'status': status,
+          'limit': limit,
+          'offset': offset,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to get collection photocards',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
   /// Get collection status for multiple photocards
   static Future<List<Map<String, dynamic>>> getCollectionStatus(List<String> photocardIds) async {
     try {

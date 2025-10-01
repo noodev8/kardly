@@ -65,6 +65,12 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
           'createdAt': photocard['created_at'],
           'description': 'Official photocard featuring ${photocard['member_stage_name'] ?? photocard['member_name'] ?? 'Unknown Member'}.',
         };
+        // Set the collection status from API response
+        isOwned = photocard['is_owned'] ?? false;
+        isWishlisted = photocard['is_wishlisted'] ?? false;
+
+        // Debug logging
+        debugPrint('Photocard ${photocard['id']}: isOwned=$isOwned, isWishlisted=$isWishlisted');
         _isLoading = false;
       });
     } catch (e) {
@@ -164,9 +170,11 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
             
             // Card Information
             _buildCardInformation(),
-            
-            const SizedBox(height: 24),
-            
+
+            const SizedBox(height: 16),
+
+
+
             // Description
             _buildDescription(),
             
@@ -238,46 +246,86 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   }
   
   Widget _buildActionButtons() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
+        // First button - Collection status
+        SizedBox(
+          width: double.infinity,
           child: PrimaryButton(
-            text: isOwned ? 'Remove from Collection' : 'Add to Collection',
+            text: isOwned ? 'Owned ✓' : 'Add to Collection',
             icon: isOwned ? Icons.check_circle : Icons.add_circle_outline,
-            onPressed: () {
-              setState(() {
-                isOwned = !isOwned;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isOwned 
-                        ? 'Added to your collection!' 
-                        : 'Removed from collection',
-                  ),
-                ),
-              );
+            onPressed: () async {
+              try {
+                final response = await ApiService.toggleOwned(widget.photocardId);
+                final newIsOwned = response['is_owned'] ?? false;
+
+                setState(() {
+                  isOwned = newIsOwned;
+                });
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newIsOwned
+                            ? 'Added to your collection!'
+                            : 'Removed from collection',
+                      ),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
             },
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
+        const SizedBox(height: 12),
+        // Second button - Wishlist status
+        SizedBox(
+          width: double.infinity,
           child: SecondaryButton(
-            text: isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist',
+            text: isWishlisted ? 'Wishlisted ♥' : 'Add to Wishlist',
             icon: isWishlisted ? Icons.favorite : Icons.favorite_border,
-            onPressed: () {
-              setState(() {
-                isWishlisted = !isWishlisted;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isWishlisted 
-                        ? 'Added to wishlist!' 
-                        : 'Removed from wishlist',
-                  ),
-                ),
-              );
+            onPressed: () async {
+              try {
+                final response = await ApiService.toggleWishlist(widget.photocardId);
+                final newIsWishlisted = response['is_wishlisted'] ?? false;
+
+                setState(() {
+                  isWishlisted = newIsWishlisted;
+                });
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newIsWishlisted
+                            ? 'Added to wishlist!'
+                            : 'Removed from wishlist',
+                      ),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
             },
           ),
         ),
@@ -352,6 +400,8 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
       ),
     );
   }
+
+
 
   Widget _buildDescription() {
     if (photocardData == null) return const SizedBox.shrink();

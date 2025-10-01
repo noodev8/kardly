@@ -52,7 +52,7 @@ class _CollectionPageState extends State<CollectionPage>
                 children: [
                   _buildOwnedTab(),
                   _buildWishlistTab(),
-                  _buildAlbumsTab(),
+                  _buildUnallocatedTab(),
                 ],
               ),
             ),
@@ -89,40 +89,43 @@ class _CollectionPageState extends State<CollectionPage>
               ],
             ),
           ),
-          Row(
-            children: [
-              IconButtonCustom(
-                icon: _selectedView == 'grid' ? Icons.grid_view : Icons.grid_view_outlined,
-                onPressed: () {
-                  setState(() {
-                    _selectedView = 'grid';
-                  });
-                },
-                backgroundColor: _selectedView == 'grid' 
-                    ? AppTheme.primaryPurple 
-                    : AppTheme.lightPurple.withOpacity(0.3),
-                iconColor: _selectedView == 'grid' 
-                    ? AppTheme.white 
-                    : AppTheme.primaryPurple,
-                size: 40,
-              ),
-              const SizedBox(width: 8),
-              IconButtonCustom(
-                icon: _selectedView == 'album' ? Icons.photo_album : Icons.photo_album_outlined,
-                onPressed: () {
-                  setState(() {
-                    _selectedView = 'album';
-                  });
-                },
-                backgroundColor: _selectedView == 'album' 
-                    ? AppTheme.primaryPurple 
-                    : AppTheme.lightPurple.withOpacity(0.3),
-                iconColor: _selectedView == 'album' 
-                    ? AppTheme.white 
-                    : AppTheme.primaryPurple,
-                size: 40,
-              ),
-            ],
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButtonCustom(
+                  icon: _selectedView == 'grid' ? Icons.grid_view : Icons.grid_view_outlined,
+                  onPressed: () {
+                    setState(() {
+                      _selectedView = 'grid';
+                    });
+                  },
+                  backgroundColor: _selectedView == 'grid'
+                      ? AppTheme.primaryPurple
+                      : AppTheme.lightPurple.withOpacity(0.3),
+                  iconColor: _selectedView == 'grid'
+                      ? AppTheme.white
+                      : AppTheme.primaryPurple,
+                  size: 40,
+                ),
+                const SizedBox(width: 8),
+                IconButtonCustom(
+                  icon: _selectedView == 'album' ? Icons.photo_album : Icons.photo_album_outlined,
+                  onPressed: () {
+                    setState(() {
+                      _selectedView = 'album';
+                    });
+                  },
+                  backgroundColor: _selectedView == 'album'
+                      ? AppTheme.primaryPurple
+                      : AppTheme.lightPurple.withOpacity(0.3),
+                  iconColor: _selectedView == 'album'
+                      ? AppTheme.white
+                      : AppTheme.primaryPurple,
+                  size: 40,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -193,7 +196,7 @@ class _CollectionPageState extends State<CollectionPage>
         tabs: const [
           Tab(text: 'Owned'),
           Tab(text: 'Wishlist'),
-          Tab(text: 'Albums'),
+          Tab(text: 'Unallocated'),
         ],
       ),
     );
@@ -435,10 +438,36 @@ class _CollectionPageState extends State<CollectionPage>
     );
   }
 
-  Widget _buildAlbumsTab() {
+  Widget _buildUnallocatedTab() {
     return Consumer<CollectionProvider>(
       builder: (context, provider, child) {
-        final albums = provider.albums;
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: ${provider.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppTheme.charcoal),
+                ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  text: 'Retry',
+                  onPressed: () => provider.loadCollection(),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final photocards = provider.unallocatedCards;
 
         return Padding(
           padding: const EdgeInsets.all(16),
@@ -447,113 +476,85 @@ class _CollectionPageState extends State<CollectionPage>
             children: [
               // Header
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'My Albums (${albums.length})',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                    'Unallocated Cards',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: AppTheme.charcoal,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const Spacer(),
-                  if (albums.isNotEmpty)
-                    PremiumBadge(text: '${albums.length} Albums', isSmall: true),
+                  Text(
+                    '${photocards.length} cards',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.darkGray,
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 16),
 
-              // Albums List
+              // Collection Grid
               Expanded(
-                child: albums.isEmpty
-                    ? Center(
+                child: photocards.isEmpty
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.album_outlined,
+                            Icon(
+                              Icons.inbox_outlined,
                               size: 64,
                               color: AppTheme.darkGray,
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No albums yet',
+                            SizedBox(height: 16),
+                            Text(
+                              'No unallocated cards',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.charcoal,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Albums will appear as you add photocards',
+                            SizedBox(height: 8),
+                            Text(
+                              'Cards you add will appear here until you mark them as owned or wishlisted',
+                              textAlign: TextAlign.center,
                               style: TextStyle(color: AppTheme.darkGray),
                             ),
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: albums.length,
+                    : GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: photocards.length,
                         itemBuilder: (context, index) {
-                          final album = albums[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            child: _AlbumCard(
-                              title: album.title,
-                              subtitle: '${album.cardCount} photocards',
-                              progress: album.completionPercentage,
-                              coverImages: const [],
-                              onTap: () {
-                                // TODO: Navigate to album detail
-                              },
-                            ),
+                          final photocard = photocards[index];
+                          return PhotocardWidget(
+                            imageUrl: photocard.imageUrl,
+                            groupName: photocard.groupName,
+                            memberName: photocard.memberName,
+                            albumName: photocard.albumName,
+                            isOwned: photocard.isOwned,
+                            isWishlisted: photocard.isWishlisted,
+                            onTap: () {
+                              context.push('/photocard/${photocard.id}');
+                            },
+                            onOwnedToggle: () {
+                              provider.toggleOwned(photocard.id);
+                            },
+                            onWishlistToggle: () {
+                              provider.toggleWishlist(photocard.id);
+                            },
                           );
                         },
                       ),
-              ),
-
-              // Add Album Button (Premium)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.lightPurple.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.primaryPurple.withOpacity(0.3),
-                    style: BorderStyle.solid,
-                    width: 2,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.add_photo_alternate_outlined,
-                      size: 32,
-                      color: AppTheme.primaryPurple,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Create New Album',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryPurple,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Upgrade to Premium for unlimited albums',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.darkGray,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const PremiumBadge(),
-                  ],
-                ),
               ),
             ],
           ),
@@ -561,6 +562,8 @@ class _CollectionPageState extends State<CollectionPage>
       },
     );
   }
+
+
 
   @override
   void dispose() {
@@ -634,116 +637,4 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _AlbumCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final double progress;
-  final List<String> coverImages;
-  final VoidCallback onTap;
 
-  const _AlbumCard({
-    required this.title,
-    required this.subtitle,
-    required this.progress,
-    required this.coverImages,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Cover Images Stack
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: Stack(
-              children: [
-                ...coverImages.take(3).toList().asMap().entries.map((entry) {
-                  final index = entry.key;
-                  return Positioned(
-                    left: index * 8.0,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightPurple.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppTheme.white,
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.photo,
-                        size: 20,
-                        color: AppTheme.primaryPurple,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-          
-          const SizedBox(width: 16),
-          
-          // Album Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.charcoal,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.darkGray,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Progress Bar
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${(progress * 100).toInt()}% Complete',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.darkGray,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: AppTheme.mediumGray,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppTheme.primaryPurple,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          const Icon(
-            Icons.chevron_right,
-            color: AppTheme.darkGray,
-          ),
-        ],
-      ),
-    );
-  }
-}
