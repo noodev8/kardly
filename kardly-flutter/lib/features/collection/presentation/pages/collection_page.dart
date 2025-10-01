@@ -158,17 +158,7 @@ class _CollectionPageState extends State<CollectionPage>
                   icon: Icons.favorite,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatCard(
-                  title: 'Value',
-                  value: '£${provider.estimatedValue.toStringAsFixed(0)}',
-                  subtitle: 'estimated',
-                  color: AppTheme.warning,
-                  icon: Icons.trending_up,
-                  isPremium: true,
-                ),
-              ),
+
             ],
           ),
         );
@@ -578,7 +568,6 @@ class _StatCard extends StatelessWidget {
   final String subtitle;
   final Color color;
   final IconData icon;
-  final bool isPremium;
 
   const _StatCard({
     required this.title,
@@ -586,7 +575,6 @@ class _StatCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.icon,
-    this.isPremium = false,
   });
 
   @override
@@ -604,7 +592,6 @@ class _StatCard extends StatelessWidget {
                 size: 20,
               ),
               const Spacer(),
-              if (isPremium) const PremiumBadge(isSmall: true),
             ],
           ),
           const SizedBox(height: 8),

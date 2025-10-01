@@ -1,9 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/collection/presentation/pages/collection_page.dart';
-import '../../features/trading/presentation/pages/trading_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -45,19 +43,9 @@ class AppRouter {
             builder: (context, state) => const HomePage(),
           ),
           GoRoute(
-            path: '/search',
-            name: 'search',
-            builder: (context, state) => const SearchPage(),
-          ),
-          GoRoute(
             path: '/collection',
             name: 'collection',
             builder: (context, state) => const CollectionPage(),
-          ),
-          GoRoute(
-            path: '/trading',
-            name: 'trading',
-            builder: (context, state) => const TradingPage(),
           ),
           GoRoute(
             path: '/profile',

@@ -5,7 +5,6 @@ A Flutter application for K-Pop fans to collect, track, and trade photocards.
 ## Features
 
 ### Free Tier
-- **Database Search**: Browse photocards by group, member, album, era
 - **Collection Tracking**: Mark cards as "owned" or "wishlist"
 - **Album-Style Views**: Digital photo albums organized by group/era
 - **User Profiles**: View others' public collections
@@ -14,10 +13,9 @@ A Flutter application for K-Pop fans to collect, track, and trade photocards.
 ### Premium Tier (£3.99/month or £29.99/year)
 - **Unlimited Collections**: No limits on photocards and albums/lists
 - **Valuation Tools**: Display estimated resale prices
-- **Trading Hub**: Post and respond to trade requests
 - **Customization**: Themes, backgrounds, stickers for album layouts
 - **Upload Cards**: Add new photocards (pending admin approval)
-- **Social Features**: Follow, like, comment on profiles, leave trader ratings
+- **Social Features**: Follow, like, comment on profiles
 
 ## Design System
 
@@ -52,19 +50,15 @@ lib/
 │   ├── home/
 │   │   └── presentation/
 │   │       └── pages/
-│   ├── search/
-│   │   └── presentation/
-│   │       ├── pages/
-│   │       └── providers/
 │   ├── collection/
 │   │   └── presentation/
 │   │       ├── pages/
 │   │       └── providers/
-│   ├── trading/
+│   ├── profile/
 │   │   └── presentation/
 │   │       ├── pages/
 │   │       └── providers/
-│   ├── profile/
+│   ├── photocard/
 │   │   └── presentation/
 │   │       ├── pages/
 │   │       └── providers/
@@ -83,7 +77,7 @@ lib/
 ## Key Components
 
 ### Navigation
-- **Bottom Navigation**: 5 main tabs (Home, Search, Collection, Trading, Profile)
+- **Bottom Navigation**: 3 main tabs (Home, Collection, Profile)
 - **Go Router**: Declarative routing with deep linking support
 
 ### Reusable Widgets
@@ -95,7 +89,7 @@ lib/
 
 ### State Management
 - **Provider**: State management for all features
-- **Providers**: Auth, Collection, Search, Trading, Profile
+- **Providers**: Auth, Collection, Profile
 
 ## Getting Started
 
@@ -157,9 +151,7 @@ flutter run
 - [ ] Push Notifications
 
 ### Phase 3 (Future)
-- [ ] Real-time Trading
 - [ ] Social Features
-- [ ] Advanced Search Filters
 - [ ] Market Analytics
 - [ ] Community Features
 

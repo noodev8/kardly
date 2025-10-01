@@ -19,7 +19,6 @@ class CollectionProvider extends ChangeNotifier {
   int get totalOwnedCount => _ownedCards.length;
   int get totalWishlistCount => _wishlistCards.length;
   int get totalUnallocatedCount => _unallocatedCards.length;
-  double get estimatedValue => _ownedCards.fold(0.0, (sum, card) => sum + card.estimatedValue);
 
   Future<void> loadCollection() async {
     _isLoading = true;
@@ -75,7 +74,6 @@ class CollectionProvider extends ChangeNotifier {
         memberName: card.memberName,
         albumName: card.albumName,
         rarity: card.rarity,
-        estimatedValue: card.estimatedValue,
         imageUrl: card.imageUrl,
         isOwned: isOwned,
         isWishlisted: card.isWishlisted,
@@ -117,7 +115,6 @@ class CollectionProvider extends ChangeNotifier {
         memberName: card.memberName,
         albumName: card.albumName,
         rarity: card.rarity,
-        estimatedValue: card.estimatedValue,
         imageUrl: card.imageUrl,
         isOwned: card.isOwned,
         isWishlisted: isWishlisted,
@@ -173,7 +170,6 @@ class Photocard {
   final String memberName;
   final String albumName;
   final String rarity;
-  final double estimatedValue;
   final String? imageUrl;
   final bool isOwned;
   final bool isWishlisted;
@@ -184,7 +180,6 @@ class Photocard {
     required this.memberName,
     required this.albumName,
     required this.rarity,
-    required this.estimatedValue,
     this.imageUrl,
     required this.isOwned,
     required this.isWishlisted,
@@ -197,7 +192,6 @@ class Photocard {
       memberName: json['member_stage_name'] ?? json['member_name'] ?? 'Unknown Member',
       albumName: json['album_title'] ?? 'Unknown Album',
       rarity: 'Common', // We don't have rarity in DB yet
-      estimatedValue: 0.0, // We don't have value in DB yet
       imageUrl: json['image_url'],
       isOwned: json['is_owned'] ?? false, // Get from collection status
       isWishlisted: json['is_wishlisted'] ?? false, // Get from collection status

@@ -123,18 +123,6 @@ class _HomePageState extends State<HomePage> {
           children: [
             Expanded(
               child: _QuickActionCard(
-                icon: Icons.search,
-                title: 'Search Cards',
-                subtitle: 'Find photocards',
-                color: AppTheme.primaryPurple,
-                onTap: () {
-                  context.go('/search');
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _QuickActionCard(
                 icon: Icons.photo_library,
                 title: 'My Collection',
                 subtitle: 'View your cards',
@@ -142,23 +130,6 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   context.go('/collection');
                 },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickActionCard(
-                icon: Icons.swap_horiz,
-                title: 'Trading Hub',
-                subtitle: 'Trade with others',
-                color: AppTheme.mintAccent,
-                onTap: () {
-                  context.go('/trading');
-                },
-                isPremium: true,
               ),
             ),
             const SizedBox(width: 12),
@@ -219,13 +190,13 @@ class _HomePageState extends State<HomePage> {
                           Icon(
                             Icons.photo_library_outlined,
                             size: 48,
-                            color: AppTheme.darkGray.withOpacity(0.5),
+                            color: AppTheme.darkGray.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'No photocards yet',
                             style: TextStyle(
-                              color: AppTheme.darkGray.withOpacity(0.7),
+                              color: AppTheme.darkGray.withValues(alpha: 0.7),
                               fontSize: 14,
                             ),
                           ),
@@ -292,7 +263,7 @@ class _HomePageState extends State<HomePage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppTheme.lightPurple.withOpacity(0.3),
+                      color: AppTheme.lightPurple.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -341,7 +312,6 @@ class _QuickActionCard extends StatelessWidget {
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
-  final bool isPremium;
 
   const _QuickActionCard({
     required this.icon,
@@ -349,7 +319,6 @@ class _QuickActionCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
-    this.isPremium = false,
   });
 
   @override
@@ -366,7 +335,7 @@ class _QuickActionCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -376,7 +345,6 @@ class _QuickActionCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (isPremium) const PremiumBadge(isSmall: true),
             ],
           ),
           const SizedBox(height: 12),

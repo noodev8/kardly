@@ -45,6 +45,7 @@ const groupsRoute = require('./routes/groups');
 const membersRoute = require('./routes/members');
 const albumsRoute = require('./routes/albums');
 const collectionRoute = require('./routes/collection');
+const profileRoute = require('./routes/profile');
 
 app.use('/api', authRoute);
 app.use('/api', addPhotocardRoute);
@@ -53,6 +54,7 @@ app.use('/api', groupsRoute);
 app.use('/api', membersRoute);
 app.use('/api', albumsRoute);
 app.use('/api', collectionRoute);
+app.use('/api', profileRoute);
 
 // 404 handler
 app.use((req, res) => {

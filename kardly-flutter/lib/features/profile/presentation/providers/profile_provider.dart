@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/api_service.dart';
 
 class ProfileProvider extends ChangeNotifier {
   UserProfile? _currentProfile;
-  List<Activity> _recentActivity = [];
   bool _isLoading = false;
+  String? _error;
 
   UserProfile? get currentProfile => _currentProfile;
-  List<Activity> get recentActivity => _recentActivity;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadProfile([String? userId]) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      // TODO: Load from API
-      await Future.delayed(const Duration(seconds: 1));
-      
+      final response = await ApiService.getProfile();
+      final profileData = response['profile'];
+
+      _currentProfile = UserProfile.fromJson(profileData);
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error loading profile: $e');
+      // Fallback to mock data if API fails
       _currentProfile = _generateMockProfile();
-      _recentActivity = _generateMockActivity();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -33,17 +39,26 @@ class ProfileProvider extends ChangeNotifier {
     if (_currentProfile == null) return;
 
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      // TODO: Update via API
-      await Future.delayed(const Duration(seconds: 1));
-      
-      _currentProfile = _currentProfile!.copyWith(
-        username: username ?? _currentProfile!.username,
-        bio: bio ?? _currentProfile!.bio,
-        location: location ?? _currentProfile!.location,
+      final response = await ApiService.updateProfile(
+        username: username,
+        bio: bio,
       );
+
+      final updatedProfileData = response['profile'];
+
+      // Update the current profile with the response data
+      _currentProfile = _currentProfile!.copyWith(
+        username: updatedProfileData['username'],
+        bio: updatedProfileData['bio'],
+        location: location ?? _currentProfile!.location, // Location not in API yet
+      );
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error updating profile: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -81,34 +96,7 @@ class ProfileProvider extends ChangeNotifier {
     );
   }
 
-  List<Activity> _generateMockActivity() {
-    return [
-      Activity(
-        id: 'activity_1',
-        type: ActivityType.addedToCollection,
-        description: 'Added NewJeans Haerin to collection',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Activity(
-        id: 'activity_2',
-        type: ActivityType.addedToWishlist,
-        description: 'Added BLACKPINK Jennie to wishlist',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Activity(
-        id: 'activity_3',
-        type: ActivityType.completedTrade,
-        description: 'Completed trade with User123',
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      Activity(
-        id: 'activity_4',
-        type: ActivityType.receivedRating,
-        description: 'Received 5-star rating from trader',
-        timestamp: DateTime.now().subtract(const Duration(days: 4)),
-      ),
-    ];
-  }
+
 }
 
 class UserProfile {
@@ -144,6 +132,26 @@ class UserProfile {
     this.profileImageUrl,
   });
 
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final stats = json['stats'] ?? {};
+    return UserProfile(
+      id: json['id'] ?? '',
+      username: json['username'] ?? 'Unknown User',
+      email: json['email'] ?? '',
+      bio: json['bio'] ?? '',
+      location: 'London, UK', // Default location since not in API yet
+      joinDate: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      isPremium: json['is_premium'] ?? false,
+      photocardCount: stats['owned_count'] ?? 0,
+      wishlistCount: stats['wishlist_count'] ?? 0,
+      followersCount: 0, // Not implemented yet
+      followingCount: 0, // Not implemented yet
+      traderRating: 0.0, // Not implemented yet
+      completedTrades: 0, // Not implemented yet
+      profileImageUrl: null, // Not implemented yet
+    );
+  }
+
   UserProfile copyWith({
     String? username,
     String? email,
@@ -178,38 +186,4 @@ class UserProfile {
   }
 }
 
-class Activity {
-  final String id;
-  final ActivityType type;
-  final String description;
-  final DateTime timestamp;
 
-  Activity({
-    required this.id,
-    required this.type,
-    required this.description,
-    required this.timestamp,
-  });
-
-  String get timeAgo {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-    
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-    } else {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-    }
-  }
-}
-
-enum ActivityType {
-  addedToCollection,
-  addedToWishlist,
-  completedTrade,
-  receivedRating,
-  createdAlbum,
-  uploadedCard,
-}

@@ -26,22 +26,10 @@ class _MainNavigationState extends State<MainNavigation> {
       activeIcon: Icons.home,
     ),
     NavigationItem(
-      route: '/search',
-      label: 'Search',
-      icon: Icons.search_outlined,
-      activeIcon: Icons.search,
-    ),
-    NavigationItem(
       route: '/collection',
       label: 'Collection',
       icon: Icons.photo_library_outlined,
       activeIcon: Icons.photo_library,
-    ),
-    NavigationItem(
-      route: '/trading',
-      label: 'Trading',
-      icon: Icons.swap_horiz_outlined,
-      activeIcon: Icons.swap_horiz,
     ),
     NavigationItem(
       route: '/profile',

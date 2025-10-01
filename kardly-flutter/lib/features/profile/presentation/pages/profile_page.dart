@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
+import '../providers/profile_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,38 +18,75 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isOwnProfile = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Load profile data when page initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().loadProfile();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.lightGray,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Profile Header
-              _buildProfileHeader(),
-              
-              // Stats Section
-              _buildStatsSection(),
-              
-              // Action Buttons
-              _buildActionButtons(),
-              
-              // Collection Preview
-              _buildCollectionPreview(),
-              
-              // Recent Activity
-              _buildRecentActivity(),
-              
-              // Settings (if own profile)
-              if (_isOwnProfile) _buildSettingsSection(),
-            ],
-          ),
+        child: Consumer<ProfileProvider>(
+          builder: (context, profileProvider, child) {
+            if (profileProvider.isLoading && profileProvider.currentProfile == null) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (profileProvider.error != null && profileProvider.currentProfile == null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${profileProvider.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppTheme.charcoal),
+                    ),
+                    const SizedBox(height: 16),
+                    PrimaryButton(
+                      text: 'Retry',
+                      onPressed: () {
+                        profileProvider.loadProfile();
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Profile Header
+                  _buildProfileHeader(profileProvider.currentProfile),
+
+                  // Stats Section
+                  _buildStatsSection(profileProvider.currentProfile),
+
+                  // Action Buttons
+                  _buildActionButtons(),
+
+                  // Settings (if own profile)
+                  if (_isOwnProfile) _buildSettingsSection(),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(UserProfile? profile) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -66,7 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundColor: AppTheme.white.withOpacity(0.3),
+                    backgroundColor: AppTheme.white.withValues(alpha: 0.3),
                     child: const Icon(
                       Icons.person,
                       size: 40,
@@ -100,22 +139,22 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'KpopFan2024',
-                          style: TextStyle(
+                        Text(
+                          profile?.username ?? 'Loading...',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.white,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const PremiumBadge(isSmall: true),
+                        if (profile?.isPremium == true) const PremiumBadge(isSmall: true),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'NewJeans & BLACKPINK collector',
-                      style: TextStyle(
+                    Text(
+                      profile?.bio ?? '',
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppTheme.white,
                       ),
@@ -125,7 +164,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Row(
                       children: [
                         RatingBarIndicator(
-                          rating: 4.8,
+                          rating: profile?.traderRating ?? 0.0,
                           itemBuilder: (context, index) => const Icon(
                             Icons.star,
                             color: AppTheme.warning,
@@ -134,9 +173,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           itemSize: 16,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          '4.8 (24 trades)',
-                          style: TextStyle(
+                        Text(
+                          '${profile?.traderRating.toStringAsFixed(1) ?? '0.0'} (${profile?.completedTrades ?? 0} trades)',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.white,
                           ),
@@ -152,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () {
                     _showProfileOptions();
                   },
-                  backgroundColor: AppTheme.white.withOpacity(0.2),
+                  backgroundColor: AppTheme.white.withValues(alpha: 0.2),
                   iconColor: AppTheme.white,
                 ),
             ],
@@ -169,9 +208,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: AppTheme.white,
               ),
               const SizedBox(width: 4),
-              const Text(
-                'Joined March 2024',
-                style: TextStyle(
+              Text(
+                'Joined ${_formatJoinDate(profile?.joinDate)}',
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.white,
                 ),
@@ -183,9 +222,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: AppTheme.white,
               ),
               const SizedBox(width: 4),
-              const Text(
-                'London, UK',
-                style: TextStyle(
+              Text(
+                profile?.location ?? 'Unknown',
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.white,
                 ),
@@ -197,7 +236,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildStatsSection() {
+  Widget _buildStatsSection(UserProfile? profile) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -205,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: _StatCard(
               title: 'Photocards',
-              value: '127',
+              value: '${profile?.photocardCount ?? 0}',
               subtitle: 'owned',
               icon: Icons.photo_library,
               color: AppTheme.primaryPurple,
@@ -215,7 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: _StatCard(
               title: 'Wishlist',
-              value: '43',
+              value: '${profile?.wishlistCount ?? 0}',
               subtitle: 'wanted',
               icon: Icons.favorite,
               color: AppTheme.accentPink,
@@ -225,7 +264,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: _StatCard(
               title: 'Followers',
-              value: '89',
+              value: '${profile?.followersCount ?? 0}',
               subtitle: 'following you',
               icon: Icons.people,
               color: AppTheme.mintAccent,
@@ -287,129 +326,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildCollectionPreview() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Collection Highlights',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.charcoal,
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () {
-                  // TODO: Navigate to full collection
-                },
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                return Container(
-                  width: 140,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: PhotocardWidget(
-                    groupName: _mockGroups[index % _mockGroups.length],
-                    memberName: _mockMembers[index % _mockMembers.length],
-                    albumName: _mockAlbums[index % _mockAlbums.length],
-                    rarity: _mockRarities[index % _mockRarities.length],
-                    isOwned: true,
-                    showActions: false,
-                    onTap: () {
-                      // TODO: Navigate to photocard detail
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildRecentActivity() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Recent Activity',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.charcoal,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...List.generate(4, (index) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: CustomCard(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _getActivityColor(index).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        _getActivityIcon(index),
-                        color: _getActivityColor(index),
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getActivityText(index),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppTheme.charcoal,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${index + 1} day${index == 0 ? '' : 's'} ago',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.darkGray,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
+
+
 
   Widget _buildSettingsSection() {
     return Padding(
@@ -504,67 +423,16 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Color _getActivityColor(int index) {
-    switch (index % 4) {
-      case 0:
-        return AppTheme.success;
-      case 1:
-        return AppTheme.accentPink;
-      case 2:
-        return AppTheme.primaryPurple;
-      case 3:
-        return AppTheme.warning;
-      default:
-        return AppTheme.primaryPurple;
-    }
-  }
+  String _formatJoinDate(DateTime? joinDate) {
+    if (joinDate == null) return 'Unknown';
 
-  IconData _getActivityIcon(int index) {
-    switch (index % 4) {
-      case 0:
-        return Icons.add_circle;
-      case 1:
-        return Icons.favorite;
-      case 2:
-        return Icons.swap_horiz;
-      case 3:
-        return Icons.star;
-      default:
-        return Icons.add_circle;
-    }
-  }
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
 
-  String _getActivityText(int index) {
-    switch (index % 4) {
-      case 0:
-        return 'Added NewJeans Haerin to collection';
-      case 1:
-        return 'Added BLACKPINK Jennie to wishlist';
-      case 2:
-        return 'Completed trade with User123';
-      case 3:
-        return 'Received 5-star rating from trader';
-      default:
-        return 'Recent activity';
-    }
+    return '${months[joinDate.month - 1]} ${joinDate.year}';
   }
-
-  // Mock data
-  static const List<String> _mockGroups = [
-    'NewJeans', 'BLACKPINK', 'aespa', 'IVE', 'ITZY'
-  ];
-  
-  static const List<String> _mockMembers = [
-    'Minji', 'Hanni', 'Danielle', 'Haerin', 'Hyein'
-  ];
-  
-  static const List<String> _mockAlbums = [
-    'Get Up', 'NewJeans', 'OMG', 'Ditto', 'Hurt'
-  ];
-  
-  static const List<String> _mockRarities = [
-    'Common', 'Rare', 'Super Rare', 'Ultra Rare', 'Legendary'
-  ];
 }
 
 class _StatCard extends StatelessWidget {

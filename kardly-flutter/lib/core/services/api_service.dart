@@ -656,6 +656,79 @@ class ApiService {
     }
   }
 
+  /// Get current user's profile
+  static Future<Map<String, dynamic>> getProfile() async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/profile');
+
+      final response = await http.get(
+        uri,
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to get profile',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Update current user's profile
+  static Future<Map<String, dynamic>> updateProfile({
+    String? username,
+    String? bio,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/profile');
+
+      // Build request body, only include non-null values
+      final Map<String, dynamic> body = {};
+      if (username != null) {
+        body['username'] = username;
+      }
+      if (bio != null) {
+        body['bio'] = bio;
+      }
+
+      final response = await http.put(
+        uri,
+        headers: _getHeaders(),
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'ERROR',
+          message: error['message'] ?? 'Failed to update profile',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
   /// Get photocards by collection status (owned, wishlist, unallocated)
   static Future<Map<String, dynamic>> getCollectionPhotocards({
     required String status, // 'owned', 'wishlist', or 'unallocated'
