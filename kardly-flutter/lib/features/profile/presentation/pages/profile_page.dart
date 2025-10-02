@@ -159,29 +159,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: AppTheme.white,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // Trader Rating
-                    Row(
-                      children: [
-                        RatingBarIndicator(
-                          rating: profile?.traderRating ?? 0.0,
-                          itemBuilder: (context, index) => const Icon(
-                            Icons.star,
-                            color: AppTheme.warning,
-                          ),
-                          itemCount: 5,
-                          itemSize: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${profile?.traderRating.toStringAsFixed(1) ?? '0.0'} (${profile?.completedTrades ?? 0} trades)',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.white,
-                          ),
-                        ),
-                      ],
-                    ),
+
                   ],
                 ),
               ),

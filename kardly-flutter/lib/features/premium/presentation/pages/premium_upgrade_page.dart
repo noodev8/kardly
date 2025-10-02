@@ -316,7 +316,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage> {
                   ],
                   const SizedBox(height: 16),
                   const Text(
-                    '• Unlimited photocards\n• Unlimited albums\n• Trading hub access\n• Valuation tools\n• Premium themes\n• Priority support',
+                    '• Unlimited photocards\n• Unlimited albums\n• Valuation tools\n• Premium themes\n• Priority support',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.charcoal,
@@ -340,12 +340,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage> {
         description: 'No limits on photocards, albums, or collections',
         isPremium: true,
       ),
-      _FeatureItem(
-        icon: Icons.swap_horiz,
-        title: 'Trading Hub',
-        description: 'Trade safely with collectors worldwide',
-        isPremium: true,
-      ),
+
       _FeatureItem(
         icon: Icons.trending_up,
         title: 'Market Valuation',

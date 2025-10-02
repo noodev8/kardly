@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:math' as math;
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
-import '../../../../shared/presentation/widgets/custom_buttons.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -42,84 +43,78 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.lightGray,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(context),
-              const SizedBox(height: 24),
+      body: Column(
+        children: [
+          // Header that covers status bar
+          _buildHeader(context),
 
+          // Rest of content with SafeArea
+          Expanded(
+            child: SafeArea(
+              top: false, // Don't add top safe area since header covers it
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 24),
 
-              // Quick Actions
-              _buildQuickActions(context),
-              const SizedBox(height: 24),
+                    // Quick Actions
+                    _buildQuickActions(context),
+                    const SizedBox(height: 24),
 
-              // Trending Photocards
-              _buildTrendingSection(),
-              const SizedBox(height: 24),
-
-              // Recent Activity
-              _buildRecentActivity(),
-            ],
+                    // Trending Photocards
+                    _buildTrendingSection(),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back! 👋',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppTheme.charcoal,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Discover new photocards and manage your collection',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.darkGray,
-                ),
-              ),
-            ],
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+
+    return ClipPath(
+      clipper: WaveClipper(),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(24, statusBarHeight + 24, 24, 45),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.primaryPurple, AppTheme.accentPink],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-        IconButtonCustom(
-          icon: Icons.notifications_outlined,
-          onPressed: () {
-            // TODO: Navigate to notifications
-          },
+        child: Row(
+          children: [
+            Text(
+              'Welcome back',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: AppTheme.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(
+              Icons.waving_hand,
+              color: AppTheme.white,
+              size: 28,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
 
 
   Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.charcoal,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
+    return Row(
           children: [
             Expanded(
               child: _QuickActionCard(
@@ -145,8 +140,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ],
-        ),
-      ],
     );
   }
 
@@ -239,71 +232,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRecentActivity() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Activity',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.charcoal,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...List.generate(3, (index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: CustomCard(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightPurple.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: AppTheme.primaryPurple,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'User${index + 1} added NewJeans Haerin to wishlist',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.charcoal,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${index + 1} hour${index == 0 ? '' : 's'} ago',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.darkGray,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ],
-    );
-  }
+
 }
 
 class _QuickActionCard extends StatelessWidget {
@@ -368,4 +297,33 @@ class _QuickActionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    const waveHeight = 8.0;
+    final waveLength = size.width / 3;
+
+    // Start from top-left corner
+    path.lineTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height - waveHeight);
+
+    // Create the wavy bottom edge
+    for (double x = size.width; x >= 0; x -= waveLength / 20) {
+      final y = size.height - waveHeight +
+          waveHeight * math.sin((x / waveLength) * 2 * math.pi);
+      path.lineTo(x, y);
+    }
+
+    path.lineTo(0, size.height - waveHeight);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

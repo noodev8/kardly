@@ -1,6 +1,6 @@
 # Kardly - K-Pop Photocard Collection App
 
-A Flutter application for K-Pop fans to collect, track, and trade photocards.
+A Flutter application for K-Pop fans to collect and track photocards.
 
 ## Features
 

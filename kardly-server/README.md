@@ -1,6 +1,6 @@
 # Kardly Server
 
-Backend server for Kardly - K-Pop photocard collection and trading app.
+Backend server for Kardly - K-Pop photocard collection app.
 
 ## Tech Stack
 

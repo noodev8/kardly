@@ -90,8 +90,6 @@ class ProfileProvider extends ChangeNotifier {
       wishlistCount: 43,
       followersCount: 89,
       followingCount: 156,
-      traderRating: 4.8,
-      completedTrades: 24,
       profileImageUrl: null,
     );
   }
@@ -111,8 +109,6 @@ class UserProfile {
   final int wishlistCount;
   final int followersCount;
   final int followingCount;
-  final double traderRating;
-  final int completedTrades;
   final String? profileImageUrl;
 
   UserProfile({
@@ -127,8 +123,6 @@ class UserProfile {
     required this.wishlistCount,
     required this.followersCount,
     required this.followingCount,
-    required this.traderRating,
-    required this.completedTrades,
     this.profileImageUrl,
   });
 
@@ -146,8 +140,6 @@ class UserProfile {
       wishlistCount: stats['wishlist_count'] ?? 0,
       followersCount: 0, // Not implemented yet
       followingCount: 0, // Not implemented yet
-      traderRating: 0.0, // Not implemented yet
-      completedTrades: 0, // Not implemented yet
       profileImageUrl: null, // Not implemented yet
     );
   }
@@ -163,8 +155,6 @@ class UserProfile {
     int? wishlistCount,
     int? followersCount,
     int? followingCount,
-    double? traderRating,
-    int? completedTrades,
     String? profileImageUrl,
   }) {
     return UserProfile(
@@ -179,8 +169,6 @@ class UserProfile {
       wishlistCount: wishlistCount ?? this.wishlistCount,
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount ?? this.followingCount,
-      traderRating: traderRating ?? this.traderRating,
-      completedTrades: completedTrades ?? this.completedTrades,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
   }
