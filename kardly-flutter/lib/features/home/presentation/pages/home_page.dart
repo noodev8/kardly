@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math;
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
+import '../../../../shared/presentation/widgets/page_layout.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -41,75 +41,30 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.lightGray,
-      body: Column(
+    return PageLayout(
+      title: 'Welcome back',
+      headerTrailing: const Icon(
+        Icons.waving_hand,
+        color: AppTheme.white,
+        size: 28,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header that covers status bar
-          _buildHeader(context),
+          const SizedBox(height: 24),
 
-          // Rest of content with SafeArea
-          Expanded(
-            child: SafeArea(
-              top: false, // Don't add top safe area since header covers it
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
+          // Quick Actions
+          _buildQuickActions(context),
+          const SizedBox(height: 24),
 
-                    // Quick Actions
-                    _buildQuickActions(context),
-                    const SizedBox(height: 24),
-
-                    // Trending Photocards
-                    _buildTrendingSection(),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Trending Photocards
+          _buildTrendingSection(),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return ClipPath(
-      clipper: WaveClipper(),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(24, statusBarHeight + 24, 24, 45),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryPurple, AppTheme.accentPink],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(
-              'Welcome back',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: AppTheme.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Icon(
-              Icons.waving_hand,
-              color: AppTheme.white,
-              size: 28,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
 
 
@@ -299,31 +254,4 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    const waveHeight = 8.0;
-    final waveLength = size.width / 3;
 
-    // Start from top-left corner
-    path.lineTo(0, 0);
-    path.lineTo(size.width, 0);
-    path.lineTo(size.width, size.height - waveHeight);
-
-    // Create the wavy bottom edge
-    for (double x = size.width; x >= 0; x -= waveLength / 20) {
-      final y = size.height - waveHeight +
-          waveHeight * math.sin((x / waveLength) * 2 * math.pi);
-      path.lineTo(x, y);
-    }
-
-    path.lineTo(0, size.height - waveHeight);
-    path.close();
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}

@@ -14,6 +14,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
+import '../../../../shared/presentation/widgets/page_layout.dart';
 import '../providers/add_photocard_provider.dart';
 
 class AddPhotocardPage extends StatefulWidget {
@@ -516,58 +517,25 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.lightGray,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('Add Photocard'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 24),
-                _buildImagePicker(),
-                const SizedBox(height: 24),
-                _buildMetadataForm(),
-                const SizedBox(height: 32),
-                _buildSubmitButton(),
-              ],
-            ),
-          ),
+    return PageLayout(
+      title: 'Add Photocard',
+      subtitle: 'Upload a new photocard to your collection',
+      showBackButton: true,
+      onBackPressed: () => context.pop(),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            _buildImagePicker(),
+            const SizedBox(height: 24),
+            _buildMetadataForm(),
+            const SizedBox(height: 32),
+            _buildSubmitButton(),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Upload Photocard',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Add a new photocard to the collection',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppTheme.darkGray,
-          ),
-        ),
-      ],
     );
   }
 

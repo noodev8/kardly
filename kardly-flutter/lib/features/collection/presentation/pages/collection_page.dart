@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
+import '../../../../shared/presentation/widgets/page_layout.dart';
 import '../providers/collection_provider.dart';
 
 class CollectionPage extends StatefulWidget {
@@ -17,7 +18,6 @@ class CollectionPage extends StatefulWidget {
 class _CollectionPageState extends State<CollectionPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedView = 'grid';
 
   @override
   void initState() {
@@ -31,99 +31,27 @@ class _CollectionPageState extends State<CollectionPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.lightGray,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
-            
-            // Stats Cards
-            _buildStatsSection(),
-            
-            // Tab Bar
-            _buildTabBar(),
-            
-            // Content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildOwnedTab(),
-                  _buildWishlistTab(),
-                  _buildUnallocatedTab(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: AppTheme.white,
-      child: Row(
+    return PageLayout(
+      title: 'My Collection',
+      subtitle: 'Track your photocards and wishlist',
+      scrollable: false,
+      contentPadding: EdgeInsets.zero,
+      child: Column(
         children: [
+          // Stats Cards
+          _buildStatsSection(),
+
+          // Tab Bar
+          _buildTabBar(),
+
+          // Content
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: TabBarView(
+              controller: _tabController,
               children: [
-                Text(
-                  'My Collection',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppTheme.charcoal,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Track your photocards and wishlist',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.darkGray,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Flexible(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButtonCustom(
-                  icon: _selectedView == 'grid' ? Icons.grid_view : Icons.grid_view_outlined,
-                  onPressed: () {
-                    setState(() {
-                      _selectedView = 'grid';
-                    });
-                  },
-                  backgroundColor: _selectedView == 'grid'
-                      ? AppTheme.primaryPurple
-                      : AppTheme.lightPurple.withOpacity(0.3),
-                  iconColor: _selectedView == 'grid'
-                      ? AppTheme.white
-                      : AppTheme.primaryPurple,
-                  size: 40,
-                ),
-                const SizedBox(width: 8),
-                IconButtonCustom(
-                  icon: _selectedView == 'album' ? Icons.photo_album : Icons.photo_album_outlined,
-                  onPressed: () {
-                    setState(() {
-                      _selectedView = 'album';
-                    });
-                  },
-                  backgroundColor: _selectedView == 'album'
-                      ? AppTheme.primaryPurple
-                      : AppTheme.lightPurple.withOpacity(0.3),
-                  iconColor: _selectedView == 'album'
-                      ? AppTheme.white
-                      : AppTheme.primaryPurple,
-                  size: 40,
-                ),
+                _buildOwnedTab(),
+                _buildWishlistTab(),
+                _buildUnallocatedTab(),
               ],
             ),
           ),
@@ -131,6 +59,8 @@ class _CollectionPageState extends State<CollectionPage>
       ),
     );
   }
+
+
 
   Widget _buildStatsSection() {
     return Consumer<CollectionProvider>(
