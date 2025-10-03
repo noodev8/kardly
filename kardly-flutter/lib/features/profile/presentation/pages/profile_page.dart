@@ -8,6 +8,7 @@ import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
 import '../../../../shared/presentation/widgets/page_layout.dart';
 import '../providers/profile_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -391,9 +392,187 @@ class _ProfilePageState extends State<ProfilePage> {
                 context.push('/add-photocard');
               },
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: AppTheme.primaryPurple),
+              title: const Text('Logout'),
+              onTap: () {
+                Navigator.pop(context);
+                _showLogoutDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: AppTheme.error),
+              title: const Text('Delete Account', style: TextStyle(color: AppTheme.error)),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteAccountDialog();
+              },
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close dialog first
+
+                try {
+                  // Logout using AuthProvider
+                  await context.read<AuthProvider>().signOut();
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Logged out successfully'),
+                        backgroundColor: AppTheme.success,
+                      ),
+                    );
+
+                    // Navigate to signup page
+                    context.go('/signup');
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error logging out: $e'),
+                        backgroundColor: AppTheme.error,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryPurple,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Are you sure you want to delete your account?'),
+              SizedBox(height: 12),
+              Text(
+                'This will permanently delete:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text('• All your photocards'),
+              Text('• Your collection data'),
+              Text('• Your profile information'),
+              Text('• All account data'),
+              SizedBox(height: 12),
+              Text(
+                'This action cannot be undone.',
+                style: TextStyle(
+                  color: AppTheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close dialog first
+
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const AlertDialog(
+                    content: Row(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 16),
+                        Text('Deleting account...'),
+                      ],
+                    ),
+                  ),
+                );
+
+                try {
+                  // Delete account
+                  print('Starting account deletion...');
+                  await ApiService.deleteAccount();
+                  print('Account deletion successful');
+
+                  // Close loading dialog
+                  if (mounted) Navigator.of(context).pop();
+
+                  // Logout user
+                  print('Signing out user...');
+                  await context.read<AuthProvider>().signOut();
+                  print('User signed out successfully');
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Account deleted successfully'),
+                        backgroundColor: AppTheme.success,
+                      ),
+                    );
+
+                    // Navigate to signup page
+                    print('Navigating to signup page...');
+                    context.go('/signup');
+                  }
+                } catch (e) {
+                  print('Error during account deletion: $e');
+
+                  // Close loading dialog if still open
+                  if (mounted) {
+                    Navigator.of(context).pop();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error deleting account: $e'),
+                        backgroundColor: AppTheme.error,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.error,
+              ),
+              child: const Text('Delete Account'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

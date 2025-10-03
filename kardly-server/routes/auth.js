@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { authenticateToken } = require('../middleware/auth');
 const { generateToken } = require('../middleware/auth');
 
 /**
@@ -193,6 +194,52 @@ router.post('/auth/verify', async (req, res) => {
   } catch (error) {
     console.error('Token verification error:', error);
     return sendError(res, 'SERVER_ERROR', 'Verification failed', 500);
+  }
+});
+
+/**
+ * DELETE /api/auth/delete-account
+ * Delete user account and all associated data
+ * Requires authentication
+ */
+router.delete('/auth/delete-account', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Start transaction to ensure all deletions succeed or fail together
+    await db.query('BEGIN');
+
+    try {
+      // Delete user collections first (foreign key constraints)
+      await db.query('DELETE FROM user_collections WHERE user_id = $1', [userId]);
+
+      // Delete user's photocards (this will also cascade to user_collections if any remain)
+      await db.query('DELETE FROM photocards WHERE user_id = $1', [userId]);
+
+      // Delete the user account
+      const deleteResult = await db.query('DELETE FROM users WHERE id = $1 RETURNING email', [userId]);
+
+      if (deleteResult.rows.length === 0) {
+        await db.query('ROLLBACK');
+        return sendError(res, 'USER_NOT_FOUND', 'User not found', 404);
+      }
+
+      // Commit the transaction
+      await db.query('COMMIT');
+
+      return sendSuccess(res, {
+        message: 'Account deleted successfully'
+      });
+
+    } catch (error) {
+      // Rollback transaction on error
+      await db.query('ROLLBACK');
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return sendError(res, 'SERVER_ERROR', 'Failed to delete account', 500);
   }
 });
 

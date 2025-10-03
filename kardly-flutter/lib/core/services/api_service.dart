@@ -900,6 +900,47 @@ class ApiService {
       );
     }
   }
+
+  /// Delete user account and all associated data
+  static Future<Map<String, dynamic>> deleteAccount() async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/auth/delete-account');
+
+      final response = await http.delete(
+        uri,
+        headers: _getHeaders(),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw ApiException(
+            returnCode: 'TIMEOUT_ERROR',
+            message: 'Request timed out. Please try again.',
+            statusCode: 408,
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Clear the auth token after successful deletion
+        setAuthToken(null);
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'UNKNOWN_ERROR',
+          message: error['message'] ?? 'Failed to delete account',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server: $e',
+        statusCode: 0,
+      );
+    }
+  }
 }
 
 /// Custom exception for API errors
