@@ -66,9 +66,8 @@ class PhotocardWidget extends StatelessWidget {
   final String? albumName;
   final bool isOwned;
   final bool isWishlisted;
+  final bool isFavorite;
   final VoidCallback? onTap;
-  final VoidCallback? onOwnedToggle;
-  final VoidCallback? onWishlistToggle;
   final bool useAspectRatio;
   final String? rarity;
   final bool showActions;
@@ -81,9 +80,8 @@ class PhotocardWidget extends StatelessWidget {
     this.albumName,
     this.isOwned = false,
     this.isWishlisted = false,
+    this.isFavorite = false,
     this.onTap,
-    this.onOwnedToggle,
-    this.onWishlistToggle,
     this.rarity,
     this.showActions = true,
     this.useAspectRatio = true,
@@ -146,28 +144,56 @@ class PhotocardWidget extends StatelessWidget {
                               ),
                             ),
                           ),
-                        // Action Buttons
-                        if (showActions)
+                        // Status Indicators (top-right corner)
+                        if (showActions && (isOwned || isWishlisted || isFavorite))
                           Positioned(
                             top: 8,
                             right: 8,
                             child: Column(
                               children: [
-                                _ActionButton(
-                                  icon: isOwned 
-                                      ? Icons.check_circle 
-                                      : Icons.check_circle_outline,
-                                  isActive: isOwned,
-                                  onTap: onOwnedToggle,
-                                ),
-                                const SizedBox(height: 4),
-                                _ActionButton(
-                                  icon: isWishlisted 
-                                      ? Icons.favorite 
-                                      : Icons.favorite_border,
-                                  isActive: isWishlisted,
-                                  onTap: onWishlistToggle,
-                                ),
+                                if (isFavorite)
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.warning.withValues(alpha: 0.9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.star,
+                                      size: 16,
+                                      color: AppTheme.white,
+                                    ),
+                                  ),
+                                if (isFavorite && (isOwned || isWishlisted))
+                                  const SizedBox(height: 4),
+                                if (isOwned)
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.success.withValues(alpha: 0.9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: AppTheme.white,
+                                    ),
+                                  ),
+                                if (isOwned && isWishlisted)
+                                  const SizedBox(height: 4),
+                                if (isWishlisted)
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.accentPink.withValues(alpha: 0.9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.favorite,
+                                      size: 16,
+                                      color: AppTheme.white,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -248,41 +274,4 @@ class PhotocardWidget extends StatelessWidget {
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback? onTap;
 
-  const _ActionButton({
-    required this.icon,
-    required this.isActive,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: AppTheme.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: isActive ? AppTheme.primaryPurple : AppTheme.darkGray,
-        ),
-      ),
-    );
-  }
-}

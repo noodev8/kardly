@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
 import '../../../../shared/presentation/widgets/page_layout.dart';
@@ -80,6 +82,13 @@ class _ProfilePageState extends State<ProfilePage> {
               // Stats Section
               _buildStatsSection(profileProvider.currentProfile),
 
+              const SizedBox(height: 16),
+
+              // Favorites Section
+              _buildFavoritesSection(),
+
+              const SizedBox(height: 16),
+
               // Action Buttons
               _buildActionButtons(),
             ],
@@ -142,6 +151,141 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFavoritesSection() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: ApiService.getCollectionPhotocards(status: 'favorites', limit: 6),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CustomCard(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const CustomCard(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Failed to load favorites',
+                style: TextStyle(color: AppTheme.darkGray),
+              ),
+            ),
+          );
+        }
+
+        final data = snapshot.data;
+        final photocards = data?['photocards'] as List<dynamic>? ?? [];
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: CustomCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: AppTheme.warning,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Favorite Cards',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.charcoal,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (photocards.isNotEmpty)
+                      TextButton(
+                        onPressed: () {
+                          // TODO: Navigate to full favorites view
+                        },
+                        child: const Text('View All'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (photocards.isEmpty)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.star_border,
+                            size: 48,
+                            color: AppTheme.darkGray,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'No favorite cards yet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.darkGray,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Tap the star on cards to add them here!',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.darkGray,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: photocards.length,
+                      itemBuilder: (context, index) {
+                        final photocard = photocards[index];
+                        return Container(
+                          width: 80,
+                          margin: const EdgeInsets.only(right: 12),
+                          child: PhotocardWidget(
+                            imageUrl: photocard['image_url'],
+                            groupName: photocard['group_name'],
+                            memberName: photocard['member_stage_name'] ?? photocard['member_name'],
+                            albumName: photocard['album_title'],
+                            isOwned: photocard['is_owned'] ?? false,
+                            isWishlisted: photocard['is_wishlisted'] ?? false,
+                            isFavorite: photocard['is_favorite'] ?? false,
+                            showActions: false, // Hide actions in profile view
+                            useAspectRatio: false,
+                            onTap: () {
+                              context.push('/photocard/${photocard['id']}');
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -20,6 +20,7 @@ class PhotocardDetailPage extends StatefulWidget {
 class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   bool isOwned = false;
   bool isWishlisted = false;
+  bool isFavorite = false;
   bool _isLoading = true;
   String? _error;
 
@@ -68,9 +69,10 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
         // Set the collection status from API response
         isOwned = photocard['is_owned'] ?? false;
         isWishlisted = photocard['is_wishlisted'] ?? false;
+        isFavorite = photocard['is_favorite'] ?? false;
 
         // Debug logging
-        debugPrint('Photocard ${photocard['id']}: isOwned=$isOwned, isWishlisted=$isWishlisted');
+        debugPrint('Photocard ${photocard['id']}: isOwned=$isOwned, isWishlisted=$isWishlisted, isFavorite=$isFavorite');
         _isLoading = false;
       });
     } catch (e) {
@@ -311,6 +313,47 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
                         newIsWishlisted
                             ? 'Added to wishlist!'
                             : 'Removed from wishlist',
+                      ),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Third button - Favorite status
+        SizedBox(
+          width: double.infinity,
+          child: SecondaryButton(
+            text: isFavorite ? 'Favorited ⭐' : 'Add to Favorites',
+            icon: isFavorite ? Icons.star : Icons.star_border,
+            onPressed: () async {
+              try {
+                final response = await ApiService.toggleFavorite(widget.photocardId);
+                final newIsFavorite = response['is_favorite'] ?? false;
+
+                setState(() {
+                  isFavorite = newIsFavorite;
+                });
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newIsFavorite
+                            ? 'Added to favorites!'
+                            : 'Removed from favorites',
                       ),
                       backgroundColor: AppTheme.success,
                     ),

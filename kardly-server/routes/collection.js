@@ -173,7 +173,7 @@ router.post('/collection/status',
 
       // Get collection status for all requested photocards
       const result = await db.query(
-        `SELECT photocard_id, is_owned, is_wishlisted
+        `SELECT photocard_id, is_owned, is_wishlisted, is_favorite
          FROM user_collections
          WHERE user_id = $1 AND photocard_id = ANY($2)`,
         [user_id, photocard_ids]
@@ -205,12 +205,12 @@ router.post('/collection/status',
 
 /**
  * POST /api/collection/photocards
- * Get photocards by collection status (owned, wishlist, unallocated)
+ * Get photocards by collection status (owned, wishlist, unallocated, favorites)
  */
 router.post('/collection/photocards',
   authenticateToken,
   [
-    body('status').isIn(['owned', 'wishlist', 'unallocated']).withMessage('status must be owned, wishlist, or unallocated'),
+    body('status').isIn(['owned', 'wishlist', 'unallocated', 'favorites']).withMessage('status must be owned, wishlist, unallocated, or favorites'),
     body('limit').optional().isInt({ min: 1, max: 100 }),
     body('offset').optional().isInt({ min: 0 }),
   ],
@@ -235,6 +235,9 @@ router.post('/collection/photocards',
         case 'unallocated':
           whereClause = 'uc.is_owned = false AND uc.is_wishlisted = false';
           break;
+        case 'favorites':
+          whereClause = 'uc.is_favorite = true';
+          break;
       }
 
       const query = `
@@ -252,7 +255,8 @@ router.post('/collection/photocards',
           p.created_at,
           p.updated_at,
           uc.is_owned,
-          uc.is_wishlisted
+          uc.is_wishlisted,
+          uc.is_favorite
         FROM photocards p
         INNER JOIN user_collections uc ON p.id = uc.photocard_id
         LEFT JOIN kpop_groups g ON p.group_id = g.id

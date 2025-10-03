@@ -729,9 +729,9 @@ class ApiService {
     }
   }
 
-  /// Get photocards by collection status (owned, wishlist, unallocated)
+  /// Get photocards by collection status (owned, wishlist, unallocated, favorites)
   static Future<Map<String, dynamic>> getCollectionPhotocards({
-    required String status, // 'owned', 'wishlist', or 'unallocated'
+    required String status, // 'owned', 'wishlist', 'unallocated', or 'favorites'
     int limit = 50,
     int offset = 0,
   }) async {
@@ -795,6 +795,36 @@ class ApiService {
       throw ApiException(
         returnCode: 'NETWORK_ERROR',
         message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Toggle favorite status for a photocard
+  static Future<Map<String, dynamic>> toggleFavorite(String photocardId) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/photocards/$photocardId/toggle-favorite');
+
+      final response = await http.post(
+        uri,
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'UNKNOWN_ERROR',
+          message: error['message'] ?? 'Failed to toggle favorite',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Network error: ${e.toString()}',
         statusCode: 0,
       );
     }

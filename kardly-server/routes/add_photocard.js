@@ -188,10 +188,10 @@ router.post(
       const insertResult = await client.query(insertQuery, insertValues);
       const photocard = insertResult.rows[0];
 
-      // Auto-add to user's collection with both flags set to false
+      // Auto-add to user's collection with all flags set to false
       const collectionQuery = `
-        INSERT INTO user_collections (user_id, photocard_id, is_owned, is_wishlisted)
-        VALUES ($1, $2, false, false)
+        INSERT INTO user_collections (user_id, photocard_id, is_owned, is_wishlisted, is_favorite)
+        VALUES ($1, $2, false, false, false)
       `;
 
       await client.query(collectionQuery, [req.user.id, photocard.id]);

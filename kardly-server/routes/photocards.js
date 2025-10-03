@@ -99,7 +99,8 @@ router.post('/photocards',
         p.created_at,
         p.updated_at,
         COALESCE(uc.is_owned, false) as is_owned,
-        COALESCE(uc.is_wishlisted, false) as is_wishlisted
+        COALESCE(uc.is_wishlisted, false) as is_wishlisted,
+        COALESCE(uc.is_favorite, false) as is_favorite
       FROM photocards p
       LEFT JOIN kpop_groups g ON p.group_id = g.id
       LEFT JOIN group_members m ON p.member_id = m.id
@@ -176,6 +177,73 @@ router.post('/photocards',
     return sendError(res, 'SERVER_ERROR', 'Failed to fetch photocards', 500);
   }
 });
+
+/**
+ * POST /api/photocards/:id/toggle-favorite
+ * Toggle favorite status for a photocard
+ * Requires authentication
+ */
+router.post('/photocards/:id/toggle-favorite',
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const photocardId = req.params.id;
+      const userId = req.user.id;
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(photocardId)) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid photocard ID format', 400);
+      }
+
+      // Check if photocard exists and belongs to user
+      const photocardCheck = await db.query(
+        'SELECT id FROM photocards WHERE id = $1 AND user_id = $2',
+        [photocardId, userId]
+      );
+
+      if (photocardCheck.rows.length === 0) {
+        return sendError(res, 'NOT_FOUND', 'Photocard not found', 404);
+      }
+
+      // Check if collection entry exists
+      const collectionCheck = await db.query(
+        'SELECT is_favorite FROM user_collections WHERE user_id = $1 AND photocard_id = $2',
+        [userId, photocardId]
+      );
+
+      let newFavoriteStatus;
+
+      if (collectionCheck.rows.length === 0) {
+        // Create new collection entry with favorite = true
+        await db.query(
+          'INSERT INTO user_collections (user_id, photocard_id, is_owned, is_wishlisted, is_favorite) VALUES ($1, $2, false, false, true)',
+          [userId, photocardId]
+        );
+        newFavoriteStatus = true;
+      } else {
+        // Toggle existing favorite status
+        const currentStatus = collectionCheck.rows[0].is_favorite;
+        newFavoriteStatus = !currentStatus;
+
+        await db.query(
+          'UPDATE user_collections SET is_favorite = $1 WHERE user_id = $2 AND photocard_id = $3',
+          [newFavoriteStatus, userId, photocardId]
+        );
+      }
+
+      return sendSuccess(res, {
+        message: newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
+        is_favorite: newFavoriteStatus,
+        photocard_id: photocardId
+      });
+
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to toggle favorite status', 500);
+    }
+  }
+);
 
 module.exports = router;
 

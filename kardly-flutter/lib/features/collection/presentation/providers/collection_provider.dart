@@ -77,6 +77,7 @@ class CollectionProvider extends ChangeNotifier {
         imageUrl: card.imageUrl,
         isOwned: isOwned,
         isWishlisted: card.isWishlisted,
+        isFavorite: card.isFavorite,
       );
 
       // Add to appropriate list
@@ -118,6 +119,7 @@ class CollectionProvider extends ChangeNotifier {
         imageUrl: card.imageUrl,
         isOwned: card.isOwned,
         isWishlisted: isWishlisted,
+        isFavorite: card.isFavorite,
       );
 
       // Add to appropriate list
@@ -154,6 +156,60 @@ class CollectionProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Toggle favorite status for a photocard
+  Future<void> toggleFavorite(String cardId) async {
+    try {
+      final response = await ApiService.toggleFavorite(cardId);
+      final isFavorite = response['is_favorite'] ?? false;
+
+      // Find the card in all lists and update it
+      final card = _findCardById(cardId);
+      if (card == null) return;
+
+      // Create updated card with new favorite status
+      final updatedCard = Photocard(
+        id: card.id,
+        groupName: card.groupName,
+        memberName: card.memberName,
+        albumName: card.albumName,
+        rarity: card.rarity,
+        imageUrl: card.imageUrl,
+        isOwned: card.isOwned,
+        isWishlisted: card.isWishlisted,
+        isFavorite: isFavorite,
+      );
+
+      // Update the card in all relevant lists
+      _updateCardInLists(updatedCard);
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error toggling favorite: $e');
+      rethrow;
+    }
+  }
+
+  // Helper method to update a card in all lists where it exists
+  void _updateCardInLists(Photocard updatedCard) {
+    // Update in owned cards
+    final ownedIndex = _ownedCards.indexWhere((card) => card.id == updatedCard.id);
+    if (ownedIndex != -1) {
+      _ownedCards[ownedIndex] = updatedCard;
+    }
+
+    // Update in wishlist cards
+    final wishlistIndex = _wishlistCards.indexWhere((card) => card.id == updatedCard.id);
+    if (wishlistIndex != -1) {
+      _wishlistCards[wishlistIndex] = updatedCard;
+    }
+
+    // Update in unallocated cards
+    final unallocatedIndex = _unallocatedCards.indexWhere((card) => card.id == updatedCard.id);
+    if (unallocatedIndex != -1) {
+      _unallocatedCards[unallocatedIndex] = updatedCard;
+    }
+  }
+
   // Helper method to remove a card from all lists
   void _removeCardFromAllLists(String cardId) {
     _ownedCards.removeWhere((card) => card.id == cardId);
@@ -173,6 +229,7 @@ class Photocard {
   final String? imageUrl;
   final bool isOwned;
   final bool isWishlisted;
+  final bool isFavorite;
 
   Photocard({
     required this.id,
@@ -183,6 +240,7 @@ class Photocard {
     this.imageUrl,
     required this.isOwned,
     required this.isWishlisted,
+    required this.isFavorite,
   });
 
   factory Photocard.fromJson(Map<String, dynamic> json) {
@@ -195,6 +253,7 @@ class Photocard {
       imageUrl: json['image_url'],
       isOwned: json['is_owned'] ?? false, // Get from collection status
       isWishlisted: json['is_wishlisted'] ?? false, // Get from collection status
+      isFavorite: json['is_favorite'] ?? false, // Get from collection status
     );
   }
 }

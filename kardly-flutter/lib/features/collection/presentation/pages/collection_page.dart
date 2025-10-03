@@ -239,14 +239,9 @@ class _CollectionPageState extends State<CollectionPage>
                             albumName: photocard.albumName,
                             isOwned: photocard.isOwned,
                             isWishlisted: photocard.isWishlisted,
+                            isFavorite: photocard.isFavorite,
                             onTap: () {
                               context.push('/photocard/${photocard.id}');
-                            },
-                            onOwnedToggle: () {
-                              provider.toggleOwned(photocard.id);
-                            },
-                            onWishlistToggle: () {
-                              provider.toggleWishlist(photocard.id);
                             },
                           );
                         },
@@ -338,14 +333,9 @@ class _CollectionPageState extends State<CollectionPage>
                             albumName: photocard.albumName,
                             isOwned: photocard.isOwned,
                             isWishlisted: photocard.isWishlisted,
+                            isFavorite: photocard.isFavorite,
                             onTap: () {
                               context.push('/photocard/${photocard.id}');
-                            },
-                            onOwnedToggle: () {
-                              provider.toggleOwned(photocard.id);
-                            },
-                            onWishlistToggle: () {
-                              provider.toggleWishlist(photocard.id);
                             },
                           );
                         },
@@ -463,14 +453,9 @@ class _CollectionPageState extends State<CollectionPage>
                             albumName: photocard.albumName,
                             isOwned: photocard.isOwned,
                             isWishlisted: photocard.isWishlisted,
+                            isFavorite: photocard.isFavorite,
                             onTap: () {
                               context.push('/photocard/${photocard.id}');
-                            },
-                            onOwnedToggle: () {
-                              provider.toggleOwned(photocard.id);
-                            },
-                            onWishlistToggle: () {
-                              provider.toggleWishlist(photocard.id);
                             },
                           );
                         },
