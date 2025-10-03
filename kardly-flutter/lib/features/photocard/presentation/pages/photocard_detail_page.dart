@@ -4,6 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/presentation/widgets/custom_card.dart';
 import '../../../../shared/presentation/widgets/custom_buttons.dart';
+import '../widgets/edit_photocard_dialog.dart';
 
 class PhotocardDetailPage extends StatefulWidget {
   final String photocardId;
@@ -507,19 +508,21 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   }
 
   void _showEditDialog() {
-    // For now, show a simple dialog - in a real app you'd want a proper edit form
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Photocard'),
-          content: const Text('Edit functionality coming soon!\n\nThis would allow you to update the group, member, and album information for this photocard.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
+        return EditPhotocardDialog(
+          photocardId: widget.photocardId,
+          currentGroupId: photocardData?['groupId'],
+          currentMemberId: photocardData?['memberId'],
+          currentAlbumId: photocardData?['albumId'],
+          currentGroupName: photocardData?['groupName'],
+          currentMemberName: photocardData?['memberName'],
+          currentAlbumName: photocardData?['albumTitle'],
+          onUpdated: () {
+            // Reload the photocard data when updated
+            _loadPhotocardData();
+          },
         );
       },
     );
