@@ -54,7 +54,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
     return PageLayout(
       title: 'Favorites',
       subtitle: 'Your starred photocards',
-      showBackButton: false,
+      showBackButton: true,
+      onBackPressed: () {
+        // Navigate back to home page specifically
+        context.go('/home');
+      },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Consumer<CollectionProvider>(
         builder: (context, provider, child) {

@@ -245,5 +245,166 @@ router.post('/photocards/:id/toggle-favorite',
   }
 );
 
+/**
+ * DELETE /api/photocards/:id
+ * Delete a photocard
+ * Requires authentication - only owner can delete
+ */
+router.delete('/photocards/:id',
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const photocardId = req.params.id;
+      const userId = req.user.id;
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(photocardId)) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid photocard ID format', 400);
+      }
+
+      // Check if photocard exists and belongs to user
+      const photocardCheck = await db.query(
+        'SELECT id, image_url FROM photocards WHERE id = $1 AND user_id = $2',
+        [photocardId, userId]
+      );
+
+      if (photocardCheck.rows.length === 0) {
+        return sendError(res, 'NOT_FOUND', 'Photocard not found or access denied', 404);
+      }
+
+      const photocard = photocardCheck.rows[0];
+
+      // Delete from user_collections first (foreign key constraint)
+      await db.query(
+        'DELETE FROM user_collections WHERE photocard_id = $1',
+        [photocardId]
+      );
+
+      // Delete the photocard
+      await db.query(
+        'DELETE FROM photocards WHERE id = $1',
+        [photocardId]
+      );
+
+      // TODO: Delete image from Cloudinary if needed
+      // This would require extracting the public_id from the image_url
+      // and calling deleteImage(public_id)
+
+      return sendSuccess(res, {
+        message: 'Photocard deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Error deleting photocard:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to delete photocard', 500);
+    }
+  }
+);
+
+/**
+ * PUT /api/photocards/:id
+ * Update a photocard's metadata
+ * Requires authentication - only owner can edit
+ */
+router.put('/photocards/:id',
+  authenticateToken,
+  [
+    body('group_id').optional().isUUID(),
+    body('member_id').optional().isUUID(),
+    body('album_id').optional().isUUID(),
+  ],
+  async (req, res) => {
+    try {
+      // Validate request
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid request parameters', 400);
+      }
+
+      const photocardId = req.params.id;
+      const userId = req.user.id;
+      const { group_id, member_id, album_id } = req.body;
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(photocardId)) {
+        return sendError(res, 'VALIDATION_ERROR', 'Invalid photocard ID format', 400);
+      }
+
+      // Check if photocard exists and belongs to user
+      const photocardCheck = await db.query(
+        'SELECT id FROM photocards WHERE id = $1 AND user_id = $2',
+        [photocardId, userId]
+      );
+
+      if (photocardCheck.rows.length === 0) {
+        return sendError(res, 'NOT_FOUND', 'Photocard not found or access denied', 404);
+      }
+
+      // Validate foreign key references if provided
+      if (group_id) {
+        const groupCheck = await db.query(
+          'SELECT id FROM kpop_groups WHERE id = $1',
+          [group_id]
+        );
+
+        if (groupCheck.rows.length === 0) {
+          return sendError(res, 'INVALID_GROUP', 'Group ID does not exist', 400);
+        }
+      }
+
+      if (member_id) {
+        const memberCheck = await db.query(
+          'SELECT id FROM group_members WHERE id = $1',
+          [member_id]
+        );
+
+        if (memberCheck.rows.length === 0) {
+          return sendError(res, 'INVALID_MEMBER', 'Member ID does not exist', 400);
+        }
+      }
+
+      if (album_id) {
+        const albumCheck = await db.query(
+          'SELECT id FROM albums WHERE id = $1',
+          [album_id]
+        );
+
+        if (albumCheck.rows.length === 0) {
+          return sendError(res, 'INVALID_ALBUM', 'Album ID does not exist', 400);
+        }
+      }
+
+      // Update the photocard
+      const updateQuery = `
+        UPDATE photocards
+        SET group_id = $1, member_id = $2, album_id = $3, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $4 AND user_id = $5
+        RETURNING id, user_id, group_id, member_id, album_id, image_url, created_at, updated_at
+      `;
+
+      const updateResult = await db.query(updateQuery, [
+        group_id || null,
+        member_id || null,
+        album_id || null,
+        photocardId,
+        userId
+      ]);
+
+      const updatedPhotocard = updateResult.rows[0];
+
+      return sendSuccess(res, {
+        message: 'Photocard updated successfully',
+        photocard: updatedPhotocard
+      });
+
+    } catch (error) {
+      console.error('Error updating photocard:', error);
+      return sendError(res, 'SERVER_ERROR', 'Failed to update photocard', 500);
+    }
+  }
+);
+
 module.exports = router;
 

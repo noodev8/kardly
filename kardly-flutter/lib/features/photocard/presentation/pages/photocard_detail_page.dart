@@ -372,6 +372,32 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
             },
           ),
         ),
+
+        const SizedBox(height: 24),
+        // Edit and Delete buttons row
+        Row(
+          children: [
+            Expanded(
+              child: SecondaryButton(
+                text: 'Edit',
+                icon: Icons.edit,
+                onPressed: () {
+                  _showEditDialog();
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SecondaryButton(
+                text: 'Delete',
+                icon: Icons.delete,
+                onPressed: () {
+                  _showDeleteDialog();
+                },
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -478,5 +504,76 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
   Widget _buildRelatedCards() {
     // Hide related cards section for now since we don't have album-based filtering yet
     return const SizedBox.shrink();
+  }
+
+  void _showEditDialog() {
+    // For now, show a simple dialog - in a real app you'd want a proper edit form
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Photocard'),
+          content: const Text('Edit functionality coming soon!\n\nThis would allow you to update the group, member, and album information for this photocard.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Photocard'),
+          content: const Text('Are you sure you want to delete this photocard? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close dialog first
+
+                try {
+                  await ApiService.deletePhotocard(widget.photocardId);
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Photocard deleted successfully'),
+                        backgroundColor: AppTheme.success,
+                      ),
+                    );
+
+                    // Navigate back to previous page
+                    context.pop();
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error deleting photocard: $e'),
+                        backgroundColor: AppTheme.error,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.error,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

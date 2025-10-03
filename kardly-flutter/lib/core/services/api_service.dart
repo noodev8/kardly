@@ -829,6 +829,77 @@ class ApiService {
       );
     }
   }
+
+  /// Delete a photocard
+  static Future<Map<String, dynamic>> deletePhotocard(String photocardId) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/photocards/$photocardId');
+
+      final response = await http.delete(
+        uri,
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'UNKNOWN_ERROR',
+          message: error['message'] ?? 'Failed to delete photocard',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Update a photocard's metadata
+  static Future<Map<String, dynamic>> updatePhotocard({
+    required String photocardId,
+    String? groupId,
+    String? memberId,
+    String? albumId,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/photocards/$photocardId');
+
+      final Map<String, dynamic> body = {};
+      if (groupId != null) body['group_id'] = groupId;
+      if (memberId != null) body['member_id'] = memberId;
+      if (albumId != null) body['album_id'] = albumId;
+
+      final response = await http.put(
+        uri,
+        headers: _getHeaders(),
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw ApiException(
+          returnCode: error['return_code'] ?? 'UNKNOWN_ERROR',
+          message: error['message'] ?? 'Failed to update photocard',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        returnCode: 'NETWORK_ERROR',
+        message: 'Cannot connect to server',
+        statusCode: 0,
+      );
+    }
+  }
 }
 
 /// Custom exception for API errors
