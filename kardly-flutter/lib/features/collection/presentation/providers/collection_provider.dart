@@ -26,23 +26,31 @@ class CollectionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('Loading collection...');
+
       // Load owned cards
       final ownedResponse = await ApiService.getCollectionPhotocards(status: 'owned', limit: 100);
+      debugPrint('Owned response: $ownedResponse');
       final ownedData = (ownedResponse['photocards'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
       _ownedCards = ownedData.map((data) => Photocard.fromJson(data)).toList();
+      debugPrint('Loaded ${_ownedCards.length} owned cards');
 
       // Load wishlist cards
       final wishlistResponse = await ApiService.getCollectionPhotocards(status: 'wishlist', limit: 100);
+      debugPrint('Wishlist response: $wishlistResponse');
       final wishlistData = (wishlistResponse['photocards'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
       _wishlistCards = wishlistData.map((data) => Photocard.fromJson(data)).toList();
+      debugPrint('Loaded ${_wishlistCards.length} wishlist cards');
 
       // Load unallocated cards
       final unallocatedResponse = await ApiService.getCollectionPhotocards(status: 'unallocated', limit: 100);
+      debugPrint('Unallocated response: $unallocatedResponse');
       final unallocatedData = (unallocatedResponse['photocards'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
       _unallocatedCards = unallocatedData.map((data) => Photocard.fromJson(data)).toList();
+      debugPrint('Loaded ${_unallocatedCards.length} unallocated cards');
 
       // For now, albums is empty (we'll implement this later)
       _albums = [];

@@ -154,38 +154,10 @@ class _CollectionPageState extends State<CollectionPage>
         final photocards = provider.ownedCards;
 
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Filter Bar
-              Row(
-                children: [
-                  Text(
-                    '${photocards.length} photocards',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.charcoal,
-                    ),
-                  ),
-                  const Spacer(),
-                  CustomFilterChip(
-                    label: 'All Groups',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 8),
-                  CustomFilterChip(
-                    label: 'Sort',
-                    isSelected: false,
-                    icon: Icons.sort,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
 
               // Collection Grid
               Expanded(
@@ -223,6 +195,7 @@ class _CollectionPageState extends State<CollectionPage>
                         ),
                       )
                     : GridView.builder(
+                        padding: EdgeInsets.zero,
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
@@ -260,47 +233,25 @@ class _CollectionPageState extends State<CollectionPage>
         final wishlistCards = provider.wishlistCards;
 
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Filter Bar
-              Row(
-                children: [
-                  Text(
-                    '${wishlistCards.length} wanted cards',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.charcoal,
-                    ),
-                  ),
-                  const Spacer(),
-                  CustomFilterChip(
-                    label: 'Priority',
-                    isSelected: false,
-                    icon: Icons.star,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
 
               // Wishlist Grid
               Expanded(
                 child: wishlistCards.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.favorite_border,
                               size: 64,
                               color: AppTheme.darkGray,
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
+                            SizedBox(height: 16),
+                            Text(
                               'No wishlist items yet',
                               style: TextStyle(
                                 fontSize: 18,
@@ -308,8 +259,8 @@ class _CollectionPageState extends State<CollectionPage>
                                 color: AppTheme.charcoal,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
+                            SizedBox(height: 8),
+                            Text(
                               'Add photocards you want to collect!',
                               style: TextStyle(color: AppTheme.darkGray),
                             ),
@@ -317,6 +268,7 @@ class _CollectionPageState extends State<CollectionPage>
                         ),
                       )
                     : GridView.builder(
+                        padding: EdgeInsets.zero,
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
@@ -380,31 +332,10 @@ class _CollectionPageState extends State<CollectionPage>
         final photocards = provider.unallocatedCards;
 
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Unallocated Cards',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.charcoal,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${photocards.length} cards',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.darkGray,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
 
               // Collection Grid
               Expanded(
@@ -437,6 +368,7 @@ class _CollectionPageState extends State<CollectionPage>
                         ),
                       )
                     : GridView.builder(
+                        padding: EdgeInsets.zero,
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,

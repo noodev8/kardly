@@ -336,7 +336,7 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
         SizedBox(
           width: double.infinity,
           child: SecondaryButton(
-            text: isFavorite ? 'Favorited ⭐' : 'Add to Favorites',
+            text: isFavorite ? 'Favorited' : 'Add to Favorites',
             icon: isFavorite ? Icons.star : Icons.star_border,
             onPressed: () async {
               try {

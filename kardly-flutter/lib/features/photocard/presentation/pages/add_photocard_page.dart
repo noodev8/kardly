@@ -48,6 +48,9 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
   bool _isLoadingMembers = false;
   bool _isLoadingAlbums = false;
 
+  // Allocation status
+  String _allocationStatus = 'owned'; // 'owned', 'wishlist', or 'unallocated'
+
   @override
   void initState() {
     super.initState();
@@ -216,6 +219,7 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
         groupId: _selectedGroup?['id'],
         memberId: _selectedMember?['id'],
         albumId: _selectedAlbum?['id'],
+        allocationStatus: _allocationStatus,
       );
 
       if (success && mounted) {
@@ -811,8 +815,83 @@ class _AddPhotocardPageState extends State<AddPhotocardPage> {
               padding: EdgeInsets.all(8.0),
               child: Center(child: CircularProgressIndicator()),
             ),
+
+          const SizedBox(height: 24),
+
+          // Allocation Section
+          _buildAllocationSection(),
         ],
       ),
+    );
+  }
+
+  Widget _buildAllocationSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.category_outlined, color: AppTheme.primaryPurple),
+            const SizedBox(width: 8),
+            Text(
+              'Allocation',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Choose where to add this photocard',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppTheme.darkGray,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Allocation Options
+        Column(
+          children: [
+            RadioListTile<String>(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppTheme.success, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Owned'),
+                ],
+              ),
+              subtitle: const Text('Add to your collection'),
+              value: 'owned',
+              groupValue: _allocationStatus,
+              onChanged: (value) {
+                setState(() {
+                  _allocationStatus = value!;
+                });
+              },
+              contentPadding: EdgeInsets.zero,
+            ),
+            RadioListTile<String>(
+              title: Row(
+                children: [
+                  Icon(Icons.favorite, color: AppTheme.accentPink, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Wishlist'),
+                ],
+              ),
+              subtitle: const Text('Add to your wishlist'),
+              value: 'wishlist',
+              groupValue: _allocationStatus,
+              onChanged: (value) {
+                setState(() {
+                  _allocationStatus = value!;
+                });
+              },
+              contentPadding: EdgeInsets.zero,
+            ),
+          ],
+        ),
+      ],
     );
   }
 

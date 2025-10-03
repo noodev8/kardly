@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -18,7 +17,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  bool _isOwnProfile = true;
+  final bool _isOwnProfile = true;
 
   @override
   void initState() {
@@ -84,6 +83,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 16),
 
+              // Add Photocard Button
+              _buildAddPhotocardButton(),
+
+              const SizedBox(height: 16),
+
               // Favorites Section
               _buildFavoritesSection(),
 
@@ -127,6 +131,9 @@ class _ProfilePageState extends State<ProfilePage> {
               subtitle: 'owned',
               icon: Icons.photo_library,
               color: AppTheme.primaryPurple,
+              onTap: () {
+                context.push('/owned-cards');
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -137,6 +144,9 @@ class _ProfilePageState extends State<ProfilePage> {
               subtitle: 'wanted',
               icon: Icons.favorite,
               color: AppTheme.accentPink,
+              onTap: () {
+                context.push('/wishlist');
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -154,13 +164,27 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildAddPhotocardButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: PrimaryButton(
+        text: 'Add Photocard',
+        icon: Icons.add_photo_alternate,
+        onPressed: () {
+          context.push('/add-photocard');
+        },
+      ),
+    );
+  }
+
   Widget _buildFavoritesSection() {
     return FutureBuilder<Map<String, dynamic>>(
       future: ApiService.getCollectionPhotocards(status: 'favorites', limit: 6),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CustomCard(
-            child: Center(
+          return CustomCard(
+            color: AppTheme.white.withValues(alpha: 0.7),
+            child: const Center(
               child: Padding(
                 padding: EdgeInsets.all(32.0),
                 child: CircularProgressIndicator(),
@@ -170,8 +194,9 @@ class _ProfilePageState extends State<ProfilePage> {
         }
 
         if (snapshot.hasError) {
-          return const CustomCard(
-            child: Padding(
+          return CustomCard(
+            color: AppTheme.white.withValues(alpha: 0.7),
+            child: const Padding(
               padding: EdgeInsets.all(16.0),
               child: Text(
                 'Failed to load favorites',
@@ -185,36 +210,27 @@ class _ProfilePageState extends State<ProfilePage> {
         final photocards = data?['photocards'] as List<dynamic>? ?? [];
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 0),
           child: CustomCard(
+            color: AppTheme.white.withValues(alpha: 0.7),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.star,
-                          color: AppTheme.warning,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Favorite Cards',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.charcoal,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Favorite Cards',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.charcoal,
+                      ),
                     ),
                     if (photocards.isNotEmpty)
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to full favorites view
+                          context.push('/owned-cards');
                         },
                         child: const Text('View All'),
                       ),
@@ -254,15 +270,29 @@ class _ProfilePageState extends State<ProfilePage> {
                   )
                 else
                   SizedBox(
-                    height: 120,
+                    height: 140,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: photocards.length,
                       itemBuilder: (context, index) {
                         final photocard = photocards[index];
                         return Container(
-                          width: 80,
+                          width: 100,
                           margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
                           child: PhotocardWidget(
                             imageUrl: photocard['image_url'],
                             groupName: photocard['group_name'],
@@ -296,41 +326,31 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           if (_isOwnProfile) ...[
             Expanded(
-              child: PrimaryButton(
-                text: 'Edit Profile',
-                icon: Icons.edit,
+              child: SecondaryButton(
+                text: 'Owned',
+                icon: Icons.check_circle,
                 onPressed: () {
-                  // TODO: Navigate to edit profile
+                  context.push('/owned-cards');
                 },
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: SecondaryButton(
-                text: 'Share',
-                icon: Icons.share,
+                text: 'Wishlist',
+                icon: Icons.favorite,
                 onPressed: () {
-                  // TODO: Share profile
+                  context.push('/wishlist');
                 },
               ),
             ),
           ] else ...[
             Expanded(
-              child: PrimaryButton(
-                text: 'Follow',
-                icon: Icons.person_add,
-                onPressed: () {
-                  // TODO: Follow user
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
               child: SecondaryButton(
-                text: 'Message',
-                icon: Icons.message,
+                text: 'View Cards',
+                icon: Icons.photo_library,
                 onPressed: () {
-                  // TODO: Message user
+                  context.push('/owned-cards');
                 },
               ),
             ),
@@ -344,37 +364,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
 
 
-
-
-  void _showProfileOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.report),
-              title: const Text('Report User'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Report user
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.block),
-              title: const Text('Block User'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Block user
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
 
 
@@ -396,27 +385,19 @@ class _ProfilePageState extends State<ProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              leading: const Icon(Icons.photo_library),
+              title: const Text('My Collection'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to settings
+                context.push('/owned-cards');
               },
             ),
             ListTile(
-              leading: const Icon(Icons.help),
-              title: const Text('Help'),
+              leading: const Icon(Icons.add_photo_alternate),
+              title: const Text('Add Photocard'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to help
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement logout
+                context.push('/add-photocard');
               },
             ),
           ],
@@ -432,6 +413,7 @@ class _StatCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.title,
@@ -439,11 +421,13 @@ class _StatCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return CustomCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [

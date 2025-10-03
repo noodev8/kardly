@@ -22,20 +22,20 @@ class _MainNavigationState extends State<MainNavigation> {
     NavigationItem(
       route: '/home',
       label: 'Home',
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
-    ),
-    NavigationItem(
-      route: '/collection',
-      label: 'Collection',
-      icon: Icons.photo_library_outlined,
-      activeIcon: Icons.photo_library,
-    ),
-    NavigationItem(
-      route: '/profile',
-      label: 'Profile',
       icon: Icons.person_outline,
       activeIcon: Icons.person,
+    ),
+    NavigationItem(
+      route: '/owned-cards',
+      label: 'Owned',
+      icon: Icons.check_circle_outline,
+      activeIcon: Icons.check_circle,
+    ),
+    NavigationItem(
+      route: '/wishlist',
+      label: 'Wishlist',
+      icon: Icons.favorite_outline,
+      activeIcon: Icons.favorite,
     ),
   ];
 

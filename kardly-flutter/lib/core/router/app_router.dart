@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 
-import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/collection/presentation/pages/collection_page.dart';
+import '../../features/collection/presentation/pages/owned_cards_page.dart';
+import '../../features/collection/presentation/pages/wishlist_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -40,17 +40,17 @@ class AppRouter {
           GoRoute(
             path: '/home',
             name: 'home',
-            builder: (context, state) => const HomePage(),
+            builder: (context, state) => const ProfilePage(), // Profile is now home
           ),
           GoRoute(
-            path: '/collection',
-            name: 'collection',
-            builder: (context, state) => const CollectionPage(),
+            path: '/owned-cards',
+            name: 'owned-cards',
+            builder: (context, state) => const OwnedCardsPage(),
           ),
           GoRoute(
-            path: '/profile',
-            name: 'profile',
-            builder: (context, state) => const ProfilePage(),
+            path: '/wishlist',
+            name: 'wishlist',
+            builder: (context, state) => const WishlistPage(),
           ),
         ],
       ),

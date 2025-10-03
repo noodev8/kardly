@@ -22,6 +22,7 @@ class AddPhotocardProvider extends ChangeNotifier {
     String? groupId,
     String? memberId,
     String? albumId,
+    String allocationStatus = 'owned',
   }) async {
     _isLoading = true;
     _error = null;
@@ -38,6 +39,18 @@ class AddPhotocardProvider extends ChangeNotifier {
       );
 
       _uploadedPhotocard = response;
+
+      // Set allocation status if not 'unallocated'
+      if (allocationStatus != 'unallocated' && response['photocard_id'] != null) {
+        final photocardId = response['photocard_id'].toString();
+
+        if (allocationStatus == 'owned') {
+          await ApiService.toggleOwned(photocardId);
+        } else if (allocationStatus == 'wishlist') {
+          await ApiService.toggleWishlist(photocardId);
+        }
+      }
+
       _successMessage = response['message'] ?? 'Photocard added successfully!';
       _isLoading = false;
       notifyListeners();

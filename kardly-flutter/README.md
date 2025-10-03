@@ -47,9 +47,6 @@ lib/
 │   │   └── presentation/
 │   │       ├── pages/
 │   │       └── providers/
-│   ├── home/
-│   │   └── presentation/
-│   │       └── pages/
 │   ├── collection/
 │   │   └── presentation/
 │   │       ├── pages/
@@ -77,7 +74,7 @@ lib/
 ## Key Components
 
 ### Navigation
-- **Bottom Navigation**: 3 main tabs (Home, Collection, Profile)
+- **Bottom Navigation**: 3 main tabs (Home/Profile, Owned Cards, Wishlist)
 - **Go Router**: Declarative routing with deep linking support
 
 ### Reusable Widgets
