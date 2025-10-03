@@ -88,6 +88,7 @@ class ProfileProvider extends ChangeNotifier {
       isPremium: true,
       photocardCount: 127,
       wishlistCount: 43,
+      favoritesCount: 15,
       followersCount: 89,
       followingCount: 156,
       profileImageUrl: null,
@@ -107,6 +108,7 @@ class UserProfile {
   final bool isPremium;
   final int photocardCount;
   final int wishlistCount;
+  final int favoritesCount;
   final int followersCount;
   final int followingCount;
   final String? profileImageUrl;
@@ -121,6 +123,7 @@ class UserProfile {
     required this.isPremium,
     required this.photocardCount,
     required this.wishlistCount,
+    required this.favoritesCount,
     required this.followersCount,
     required this.followingCount,
     this.profileImageUrl,
@@ -138,6 +141,7 @@ class UserProfile {
       isPremium: json['is_premium'] ?? false,
       photocardCount: stats['owned_count'] ?? 0,
       wishlistCount: stats['wishlist_count'] ?? 0,
+      favoritesCount: stats['favorites_count'] ?? 0,
       followersCount: 0, // Not implemented yet
       followingCount: 0, // Not implemented yet
       profileImageUrl: null, // Not implemented yet
@@ -153,6 +157,7 @@ class UserProfile {
     bool? isPremium,
     int? photocardCount,
     int? wishlistCount,
+    int? favoritesCount,
     int? followersCount,
     int? followingCount,
     String? profileImageUrl,
@@ -167,6 +172,7 @@ class UserProfile {
       isPremium: isPremium ?? this.isPremium,
       photocardCount: photocardCount ?? this.photocardCount,
       wishlistCount: wishlistCount ?? this.wishlistCount,
+      favoritesCount: favoritesCount ?? this.favoritesCount,
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount ?? this.followingCount,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,

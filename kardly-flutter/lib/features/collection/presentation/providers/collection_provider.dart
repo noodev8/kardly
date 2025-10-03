@@ -5,6 +5,7 @@ class CollectionProvider extends ChangeNotifier {
   List<Photocard> _ownedCards = [];
   List<Photocard> _wishlistCards = [];
   List<Photocard> _unallocatedCards = [];
+  List<Photocard> _favoriteCards = [];
   List<Album> _albums = [];
   bool _isLoading = false;
   String? _error;
@@ -12,6 +13,7 @@ class CollectionProvider extends ChangeNotifier {
   List<Photocard> get ownedCards => _ownedCards;
   List<Photocard> get wishlistCards => _wishlistCards;
   List<Photocard> get unallocatedCards => _unallocatedCards;
+  List<Photocard> get favoriteCards => _favoriteCards;
   List<Album> get albums => _albums;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -19,6 +21,7 @@ class CollectionProvider extends ChangeNotifier {
   int get totalOwnedCount => _ownedCards.length;
   int get totalWishlistCount => _wishlistCards.length;
   int get totalUnallocatedCount => _unallocatedCards.length;
+  int get totalFavoriteCount => _favoriteCards.length;
 
   Future<void> loadCollection() async {
     _isLoading = true;
@@ -51,6 +54,14 @@ class CollectionProvider extends ChangeNotifier {
           .cast<Map<String, dynamic>>();
       _unallocatedCards = unallocatedData.map((data) => Photocard.fromJson(data)).toList();
       debugPrint('Loaded ${_unallocatedCards.length} unallocated cards');
+
+      // Load favorite cards
+      final favoritesResponse = await ApiService.getCollectionPhotocards(status: 'favorites', limit: 100);
+      debugPrint('Favorites response: $favoritesResponse');
+      final favoritesData = (favoritesResponse['photocards'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      _favoriteCards = favoritesData.map((data) => Photocard.fromJson(data)).toList();
+      debugPrint('Loaded ${_favoriteCards.length} favorite cards');
 
       // For now, albums is empty (we'll implement this later)
       _albums = [];

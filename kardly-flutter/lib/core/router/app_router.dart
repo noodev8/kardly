@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/collection/presentation/pages/owned_cards_page.dart';
 import '../../features/collection/presentation/pages/wishlist_page.dart';
+import '../../features/collection/presentation/pages/favorites_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -51,6 +52,11 @@ class AppRouter {
             path: '/wishlist',
             name: 'wishlist',
             builder: (context, state) => const WishlistPage(),
+          ),
+          GoRoute(
+            path: '/favorites',
+            name: 'favorites',
+            builder: (context, state) => const FavoritesPage(),
           ),
         ],
       ),

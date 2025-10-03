@@ -132,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: Icons.photo_library,
               color: AppTheme.primaryPurple,
               onTap: () {
-                context.push('/owned-cards');
+                context.go('/owned-cards');
               },
             ),
           ),
@@ -145,18 +145,21 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: Icons.favorite,
               color: AppTheme.accentPink,
               onTap: () {
-                context.push('/wishlist');
+                context.go('/wishlist');
               },
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              title: 'Followers',
-              value: '${profile?.followersCount ?? 0}',
-              subtitle: 'following you',
-              icon: Icons.people,
+              title: 'Favorites',
+              value: '${profile?.favoritesCount ?? 0}',
+              subtitle: 'starred',
+              icon: Icons.star,
               color: AppTheme.mintAccent,
+              onTap: () {
+                context.go('/favorites');
+              },
             ),
           ),
         ],
@@ -216,27 +219,15 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Favorite Cards',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.charcoal,
-                      ),
-                    ),
-                    if (photocards.isNotEmpty)
-                      TextButton(
-                        onPressed: () {
-                          context.push('/owned-cards');
-                        },
-                        child: const Text('View All'),
-                      ),
-                  ],
+                const Text(
+                  'Favorite Cards',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.charcoal,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 if (photocards.isEmpty)
                   const Center(
                     child: Padding(
@@ -330,7 +321,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 text: 'Owned',
                 icon: Icons.check_circle,
                 onPressed: () {
-                  context.push('/owned-cards');
+                  context.go('/owned-cards');
                 },
               ),
             ),
@@ -340,7 +331,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 text: 'Wishlist',
                 icon: Icons.favorite,
                 onPressed: () {
-                  context.push('/wishlist');
+                  context.go('/wishlist');
                 },
               ),
             ),
@@ -350,7 +341,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 text: 'View Cards',
                 icon: Icons.photo_library,
                 onPressed: () {
-                  context.push('/owned-cards');
+                  context.go('/owned-cards');
                 },
               ),
             ),
@@ -389,7 +380,7 @@ class _ProfilePageState extends State<ProfilePage> {
               title: const Text('My Collection'),
               onTap: () {
                 Navigator.pop(context);
-                context.push('/owned-cards');
+                context.go('/owned-cards');
               },
             ),
             ListTile(

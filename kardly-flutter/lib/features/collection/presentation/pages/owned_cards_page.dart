@@ -16,6 +16,9 @@ class OwnedCardsPage extends StatefulWidget {
 }
 
 class _OwnedCardsPageState extends State<OwnedCardsPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -26,13 +29,33 @@ class _OwnedCardsPageState extends State<OwnedCardsPage> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<dynamic> _filterPhotocards(List<dynamic> photocards) {
+    if (_searchQuery.isEmpty) return photocards;
+
+    return photocards.where((photocard) {
+      final groupName = (photocard.groupName ?? '').toLowerCase();
+      final memberName = (photocard.memberName ?? '').toLowerCase();
+      final albumName = (photocard.albumName ?? '').toLowerCase();
+      final query = _searchQuery.toLowerCase();
+
+      return groupName.contains(query) ||
+             memberName.contains(query) ||
+             albumName.contains(query);
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PageLayout(
       title: 'Owned Cards',
       subtitle: 'Your photocard collection',
-      showBackButton: true,
-      onBackPressed: () => context.pop(),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      showBackButton: false,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Consumer<CollectionProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -129,7 +152,66 @@ class _OwnedCardsPageState extends State<OwnedCardsPage> {
             );
           }
 
-          return GridView.builder(
+          final filteredPhotocards = _filterPhotocards(ownedPhotocards);
+
+          return Column(
+            children: [
+              // Search bar
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search by group, member, or album...',
+                    prefixIcon: const Icon(Icons.search, color: AppTheme.darkGray),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: AppTheme.darkGray),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+
+              // Results count
+              if (filteredPhotocards.length != ownedPhotocards.length)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Showing ${filteredPhotocards.length} of ${ownedPhotocards.length} cards',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.darkGray.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+
+              // Grid
+              GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
@@ -139,9 +221,9 @@ class _OwnedCardsPageState extends State<OwnedCardsPage> {
               crossAxisSpacing: 12,
               childAspectRatio: 0.75,
             ),
-            itemCount: ownedPhotocards.length,
+            itemCount: filteredPhotocards.length,
             itemBuilder: (context, index) {
-              final photocard = ownedPhotocards[index];
+              final photocard = filteredPhotocards[index];
               return PhotocardWidget(
                 imageUrl: photocard.imageUrl,
                 groupName: photocard.groupName,
@@ -154,6 +236,8 @@ class _OwnedCardsPageState extends State<OwnedCardsPage> {
                 },
               );
             },
+          ),
+            ],
           );
         },
       ),

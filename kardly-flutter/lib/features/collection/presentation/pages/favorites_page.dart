@@ -8,14 +8,14 @@ import '../../../../shared/presentation/widgets/custom_buttons.dart';
 import '../../../../shared/presentation/widgets/page_layout.dart';
 import '../providers/collection_provider.dart';
 
-class WishlistPage extends StatefulWidget {
-  const WishlistPage({super.key});
+class FavoritesPage extends StatefulWidget {
+  const FavoritesPage({super.key});
 
   @override
-  State<WishlistPage> createState() => _WishlistPageState();
+  State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _WishlistPageState extends State<WishlistPage> {
+class _FavoritesPageState extends State<FavoritesPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -36,15 +36,15 @@ class _WishlistPageState extends State<WishlistPage> {
 
   List<dynamic> _filterPhotocards(List<dynamic> photocards) {
     if (_searchQuery.isEmpty) return photocards;
-
+    
     return photocards.where((photocard) {
       final groupName = (photocard.groupName ?? '').toLowerCase();
       final memberName = (photocard.memberName ?? '').toLowerCase();
       final albumName = (photocard.albumName ?? '').toLowerCase();
       final query = _searchQuery.toLowerCase();
-
-      return groupName.contains(query) ||
-             memberName.contains(query) ||
+      
+      return groupName.contains(query) || 
+             memberName.contains(query) || 
              albumName.contains(query);
     }).toList();
   }
@@ -52,8 +52,8 @@ class _WishlistPageState extends State<WishlistPage> {
   @override
   Widget build(BuildContext context) {
     return PageLayout(
-      title: 'Wishlist',
-      subtitle: 'Cards you want to collect',
+      title: 'Favorites',
+      subtitle: 'Your starred photocards',
       showBackButton: false,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Consumer<CollectionProvider>(
@@ -107,9 +107,10 @@ class _WishlistPageState extends State<WishlistPage> {
             );
           }
 
-          final wishlistPhotocards = provider.wishlistCards;
+          // Get favorite photocards
+          final favoritePhotocards = provider.favoriteCards;
 
-          if (wishlistPhotocards.isEmpty) {
+          if (favoritePhotocards.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
@@ -117,13 +118,13 @@ class _WishlistPageState extends State<WishlistPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.favorite_outline,
+                      Icons.star_border,
                       size: 64,
                       color: AppTheme.darkGray.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No wishlist items yet',
+                      'No favorite cards yet',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -132,7 +133,7 @@ class _WishlistPageState extends State<WishlistPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Add photocards to your wishlist to track what you want to collect',
+                      'Star photocards to add them to your favorites',
                       style: TextStyle(
                         color: AppTheme.darkGray.withValues(alpha: 0.6),
                         fontSize: 14,
@@ -144,7 +145,7 @@ class _WishlistPageState extends State<WishlistPage> {
                       onPressed: () {
                         context.push('/add-photocard');
                       },
-                      child: const Text('Add to wishlist'),
+                      child: const Text('Add your first photocard'),
                     ),
                   ],
                 ),
@@ -152,7 +153,7 @@ class _WishlistPageState extends State<WishlistPage> {
             );
           }
 
-          final filteredPhotocards = _filterPhotocards(wishlistPhotocards);
+          final filteredPhotocards = _filterPhotocards(favoritePhotocards);
 
           return Column(
             children: [
@@ -198,11 +199,11 @@ class _WishlistPageState extends State<WishlistPage> {
               ),
 
               // Results count
-              if (filteredPhotocards.length != wishlistPhotocards.length)
+              if (filteredPhotocards.length != favoritePhotocards.length)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Showing ${filteredPhotocards.length} of ${wishlistPhotocards.length} cards',
+                    'Showing ${filteredPhotocards.length} of ${favoritePhotocards.length} cards',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.darkGray.withValues(alpha: 0.7),

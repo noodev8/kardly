@@ -31,6 +31,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
         u.created_at,
         COUNT(DISTINCT CASE WHEN uc.is_owned = true THEN uc.photocard_id END) as owned_count,
         COUNT(DISTINCT CASE WHEN uc.is_wishlisted = true THEN uc.photocard_id END) as wishlist_count,
+        COUNT(DISTINCT CASE WHEN uc.is_favorite = true THEN uc.photocard_id END) as favorites_count,
         COUNT(DISTINCT g.id) as groups_count,
         COUNT(DISTINCT gm.id) as members_count,
         COUNT(DISTINCT a.id) as albums_count
@@ -62,6 +63,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
       stats: {
         owned_count: parseInt(profile.owned_count) || 0,
         wishlist_count: parseInt(profile.wishlist_count) || 0,
+        favorites_count: parseInt(profile.favorites_count) || 0,
         groups_count: parseInt(profile.groups_count) || 0,
         members_count: parseInt(profile.members_count) || 0,
         albums_count: parseInt(profile.albums_count) || 0,
