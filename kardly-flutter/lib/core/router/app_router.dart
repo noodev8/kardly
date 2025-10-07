@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/collection/presentation/pages/owned_cards_page.dart';
 import '../../features/collection/presentation/pages/wishlist_page.dart';
 import '../../features/collection/presentation/pages/favorites_page.dart';
@@ -13,8 +14,15 @@ import '../../shared/presentation/widgets/main_navigation.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/',
     routes: [
+      // Splash Screen Route
+      GoRoute(
+        path: '/',
+        name: 'splash',
+        builder: (context, state) => const SplashPage(),
+      ),
+
       // Onboarding and Auth Routes
       GoRoute(
         path: '/onboarding',

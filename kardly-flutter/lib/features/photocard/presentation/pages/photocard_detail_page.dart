@@ -110,7 +110,7 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
           maxLines: 1,
         ),
         actions: [
-          if (!_isLoading && photocardData != null)
+          if (!_isLoading && photocardData != null) ...[
             IconButton(
               icon: const Icon(
                 Icons.share,
@@ -122,6 +122,45 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
                 );
               },
             ),
+            PopupMenuButton<String>(
+              icon: const Icon(
+                Icons.more_vert,
+                color: AppTheme.charcoal,
+              ),
+              onSelected: (String value) {
+                switch (value) {
+                  case 'edit':
+                    _showEditDialog();
+                    break;
+                  case 'delete':
+                    _showDeleteDialog();
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 20),
+                      SizedBox(width: 12),
+                      Text('Edit'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, size: 20, color: AppTheme.error),
+                      SizedBox(width: 12),
+                      Text('Delete', style: TextStyle(color: AppTheme.error)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
       body: _isLoading
@@ -372,32 +411,6 @@ class _PhotocardDetailPageState extends State<PhotocardDetailPage> {
               }
             },
           ),
-        ),
-
-        const SizedBox(height: 24),
-        // Edit and Delete buttons row
-        Row(
-          children: [
-            Expanded(
-              child: SecondaryButton(
-                text: 'Edit',
-                icon: Icons.edit,
-                onPressed: () {
-                  _showEditDialog();
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SecondaryButton(
-                text: 'Delete',
-                icon: Icons.delete,
-                onPressed: () {
-                  _showDeleteDialog();
-                },
-              ),
-            ),
-          ],
         ),
       ],
     );
